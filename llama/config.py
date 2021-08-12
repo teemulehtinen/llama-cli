@@ -84,7 +84,7 @@ class Config:
     tokens = {}
     sources = []
     for s_in in data['sources']:
-      if s_in['token']:
+      if 'token' in s_in:
         s_out = { **s_in, 'token': str(uuid.uuid4()) }
         tokens[s_out['token']] = s_in['token']
         sources.append(s_out)
@@ -96,7 +96,7 @@ class Config:
   def join_tokens(data, tokens):
     sources = []
     for s_in in data['sources']:
-      if s_in['token']:
+      if 'token' in s_in:
         if not s_in['token'] in tokens:
           print('Error: missing token for {}'.format(s_in['url']))
         sources.append({ **s_in, 'token': tokens.get(s_in['token'], '') })

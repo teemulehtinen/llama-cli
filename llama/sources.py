@@ -42,6 +42,6 @@ def status(config):
     s = ''
     for i, src in enumerate(config.sources):
       s += 'Data source {:d}: {} {}\n'.format(i, src['type'], src['url'])
-      return s
+    return s
   else:
     return "No data sources configured"
