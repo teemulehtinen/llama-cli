@@ -14,10 +14,10 @@ def command(args, config):
     print('            cannot be appended after, only refetched completely.\n')
     print('   none     Personal information including e.g. names and emails is kept. Only')
     print('            for course administrative tasks in a properly secured media.\n')
-    print('Current: {}'.format(config.privacy))
+    print(f'Current: {config.privacy}')
   elif args[0] in PRIVACY_TXT:
     config.set_privacy(args[0])
-    print('Privacy mode set to: {}'.format(config.privacy))
+    print(f'Privacy mode set to: {config.privacy}')
   else:
     print('Not a privacy mode')
 

@@ -4,7 +4,6 @@ import uuid
 
 CONFIG_FILE = '.llama'
 TOKENS_FILE = '.tokens'
-CACHE_DIR = '.cache'
 
 class Config:
 
@@ -30,7 +29,7 @@ class Config:
     self.write_json(CONFIG_FILE, data)
     if tokens:
       self.write_json(TOKENS_FILE, tokens)
-    self.write_gitignore()
+      self.write_gitignore()
     self.exists = True
 
   @property
@@ -75,9 +74,16 @@ class Config:
 
   @staticmethod
   def write_gitignore():
+    ignore_line = f'{TOKENS_FILE}\n'
     if not os.path.isfile('.gitignore'):
       with open('.gitignore', 'w') as f:
-        f.write('{}\n{}/\n'.format(TOKENS_FILE, CACHE_DIR))
+        f.write(ignore_line)
+    else:
+      with open('.gitignore', 'r+') as f:
+        for line in f:
+          if line == ignore_line:
+            return
+        f.write(ignore_line)
 
   @staticmethod
   def split_tokens(data):

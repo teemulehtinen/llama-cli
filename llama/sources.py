@@ -1,47 +1,34 @@
-TYPES = [ 'aplus' ]
-
-def find_source(config, url):
-  for s in config.sources:
-    if s['url'] == url:
-      return s
-  return None
+from .common import require, input_selection
+from .types import TYPES, select_type
 
 def command(args, config):
-  if len(args) != 2 and len(args) != 3:
+  if not args in (['add'], ['rm']):
     print('Manages learning data sources for the working directory\n')
-    print('usage: llama source <type> <url> [<token>]')
-    print('   or: llama source rm <url>\n')
-    print('Supported types are: {}'.format(', '.join(TYPES)))
-    print('Tokens are stored separately to .tokens and ignored for git.')
-  elif args[0] == 'rm':
-    src = find_source(config, args[1])
+    print('usage: llama source add')
+    print('   or: llama source rm\n')
+  elif args == ['rm']:
+    require(config.sources, 'No data sources configured')
+    print('Consider sources for removal')
+    i = input_selection(s['name'] for s in config.sources)
+    require(not i is None)
+    src = config.sources[i]
+    config.set_sources(s for j, s in enumerate(config.sources) if j != i)
+    print(f'Removed source: {src["name"]}')
+  elif args == ['add']:
+    print('Available data source types')
+    i = input_selection(t['name'] for t in TYPES)
+    require(not i is None)
+    type = TYPES[i]
+    src = type['add']()
     if src:
-      config.set_sources(s for s in config.sources if s != src)
-      print('Removed source: {} {}'.format(src['type'], src['url']))
-    else:
-      print('Source not found')
-  elif args[0] in TYPES:
-    src = {
-      'type': args[0],
-      'url': args[1],
-    }
-    if len(args) == 3:
-      src['token'] = args[2]
-    #TODO check source is valid
-    old = find_source(config, args[1])
-    if old:
-      config.set_sources(s if s != old else src for s in config.sources)
-    else:
       config.set_sources(config.sources + [src])
-    print('Added source: {} {}'.format(src['type'], src['url']))
-  else:
-    print('Unknown source type')
+      print(f'Added source: {src["name"]}')
 
 def status(config):
-  if config.sources:
-    s = ''
-    for i, src in enumerate(config.sources):
-      s += 'Data source {:d}: {} {}\n'.format(i, src['type'], src['url'])
-    return s
-  else:
+  if not config.sources:
     return "No data sources configured"
+  lines = []
+  for i, src in enumerate(config.sources):
+    lines.append(f'Source {i:d} [{src["id"]}] {src["name"]}')
+    #TODO display item count and time period
+  return '\n'.join(lines)
