@@ -12,7 +12,7 @@ class Config:
       'llama': version,
       'sources': [],
       'privacy': 'pseudo',
-      'consent': None,
+      'exclude': [],
     }
     self.exists = os.path.isfile(CONFIG_FILE)
     if self.exists:
@@ -31,30 +31,30 @@ class Config:
 
   @property
   def version(self):
-    return self.data['llama']
+    return self.data.get('llama')
 
   @property
   def sources(self):
-    return self.data['sources']
+    return self.data.get('sources', [])
   
   def set_sources(self, sources):
-    self.data['sources'] = sources
+    self.data['sources'] = list(sources)
     self.write()
 
   @property
   def privacy(self):
-    return self.data['privacy']
+    return self.data.get('privacy', 'pseudo')
 
   def set_privacy(self, privacy):
     self.data['privacy'] = privacy
     self.write()
 
   @property
-  def consent(self):
-    return self.data['consent']
+  def exclude(self):
+    return self.data.get('exclude', [])
   
-  def set_consent(self, consent):
-    self.data['consent'] = consent
+  def set_exclude(self, exclude):
+    self.data['exclude'] = list(exclude)
     self.write()
 
   @staticmethod

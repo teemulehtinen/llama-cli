@@ -32,14 +32,8 @@ COMMANDS = [
     'call': privacy.command,
   },
   {
-    'cmd': 'consent',
-    'desc': 'Configure research consent field',
-    'require': ['config', 'source'],
-    'call': exclude.command_consent,
-  },
-  {
     'cmd': 'exclude',
-    'desc': 'Exclude selected tables, columns, or persons to optimize fetch',
+    'desc': 'Exclude selected tables, columns, or persons at fetch',
     'require': ['config', 'source'],
     'call': exclude.command,
   },

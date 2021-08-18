@@ -10,7 +10,7 @@ def command(args, config):
   if args != [] and args != ['update']:
     print('Lists and updates available data tables and their fields\n')
     print('usage: llama list [update]\n')
-  for i, src, api in enumerate_sources(config.sources):
+  for i, src, api in enumerate_sources(config):
     print(format_source(i, src['name']))
     tables, cached = api.list_tables(args != ['update'])
     if cached:
