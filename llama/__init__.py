@@ -2,8 +2,9 @@ from .common import find, require
 from .config import Config
 from . import status
 from . import sources
+from . import list
 from . import privacy
-from . import consent
+from . import exclude
 
 VERSION = '1.0.0'
 
@@ -20,10 +21,10 @@ COMMANDS = [
     'call': sources.command,
   },
   {
-    'cmd': 'show',
-    'desc': 'List available data tables and fields at source',
+    'cmd': 'list',
+    'desc': 'List available data tables and columns',
     'require': ['config', 'source'],
-    'call': None,
+    'call': list.command,
   },
   {
     'cmd': 'privacy',
@@ -34,13 +35,13 @@ COMMANDS = [
     'cmd': 'consent',
     'desc': 'Configure research consent field',
     'require': ['config', 'source'],
-    'call': consent.command,
+    'call': exclude.command_consent,
   },
   {
     'cmd': 'exclude',
-    'desc': 'Exclude selected tables, fields, or rows (to optimize fetch)',
+    'desc': 'Exclude selected tables, columns, or persons to optimize fetch',
     'require': ['config', 'source'],
-    'call': None,
+    'call': exclude.command,
   },
   {
     'cmd': 'fetch',

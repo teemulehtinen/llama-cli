@@ -20,3 +20,6 @@ def interactive_connect():
     'course_id': course['id'],
     'name': course['html_url'],
   }
+
+def construct_client(src):
+  return AplusApi(src['url'], src['token'], src['course_id'])

@@ -1,8 +1,17 @@
+from llama.types.AbstractApi import AbstractApi
 import requests
 import time
 import json
+from ..common import write_json, read_json
 
-class AplusApi:
+def en_h_name(name):
+  return ''.join(
+    (p[3:] if p.startswith('en:') else p).replace('  ', ' ')
+    for p in name.split('|')
+    if len(p) < 3 or p[2] != ':' or p.startswith('en:')
+  )
+
+class AplusApi(AbstractApi):
 
   API_URL = '{host}/api/v2/'
   COURSE_LIST = '{url}courses/'
@@ -10,6 +19,7 @@ class AplusApi:
   SUBMISSION_CSV = '{url}courses/{course_id:d}/submissiondata/?exercise_id={exercise_id:d}&best=no&format=csv'
   SUBMISSION_DETAILS = '{url}submissions/{submission_id:d}'
   REQUEST_DELAY = 1 #sec
+  EXERCISE_JSON = '{course_id}-exercise-list.json'
 
   @classmethod
   def create(cls, host, token):
@@ -25,6 +35,32 @@ class AplusApi:
     courses = self.get_paged_json(self.COURSE_LIST.format(url=self.url))
     courses.sort(key=lambda c: c['id'], reverse=True)
     return courses
+  
+  def list_tables(self, try_cache=True, only_cache=False):
+    file_name = self.EXERCISE_JSON.format(course_id=self.course_id)
+    if try_cache or only_cache:
+      exercises = read_json(file_name)
+      if exercises:
+        return exercises, True
+      elif only_cache:
+        return None, False
+    exercises = []
+    modules = self.get_paged_json(self.EXERCISE_LIST.format(url=self.url, course_id=self.course_id))
+    for m in modules:
+      for e in m['exercises']:
+        time.sleep(self.REQUEST_DELAY)
+        details = self.get_json(e['url'])
+        entry = {
+          'id': details['id'],
+          'name': en_h_name(details['hierarchical_name']),
+          'max_points': details['max_points'],
+          'max_submissions': details['max_submissions'],
+        }
+        form = (details.get('exercise_info') or {}).get('form_spec', [])
+        entry['columns'] = [f['key'] for f in form if f['type'] != 'static']
+        exercises.append(entry)
+    write_json(file_name, exercises)
+    return exercises, False
 
   def get(self, url):
     print('> aplus GET', url)
