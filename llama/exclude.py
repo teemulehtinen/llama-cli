@@ -88,8 +88,8 @@ def command(args, config):
     print('       llama exclude set #424.secret')
     print('       llama exclude set "-research consent=yes"\n')
     print('Note that whole tables or columns in any table can be selected by omitting')
-    print('other parts in the specification. Value is used to select persons whose rows')
-    print('are then excluded in all tables.')
+    print('other parts in the specification. Value-part is used to select persons whose')
+    print('rows are then excluded in all tables.')
   elif args == ['rm']:
     require(config.exclude, 'No exclusions configured')
     print('Consider exclusion for removal')
