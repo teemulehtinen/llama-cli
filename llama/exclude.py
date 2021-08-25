@@ -1,49 +1,7 @@
 import re
-from .types import enumerate_sources
+from .types import Filters, get_sources_with_tables
 from .list import format_source, format_table
 from .common import require, input_selection
-
-def match_source(spec, source):
-  if spec['source'] is None:
-    return True
-  if spec['reverse'] and spec['value'] is None:
-    return spec['source'] != source
-  return spec['source'] == source
-
-def match_table(spec, table):
-  def check(table):
-    if spec['table_by_id']:
-      return spec['table'] == str(table['id'])
-    return spec['table'] in table['name']
-  if spec['table'] is None:
-    return True
-  if spec['reverse'] and spec['value'] is None:
-    return not check(table)
-  return check(table)
-
-def match_columns(spec, table):
-  def check(column):
-    if spec['column'] is None:
-      return True
-    if spec['reverse'] and spec['value'] is None:
-      return not spec['column'] in column
-    return spec['column'] in column
-  return [c for c in table['columns'] if check(c)]
-
-def match(spec, source, tables):
-  excluded = []
-  rev = spec['reverse'] and spec['value'] is None
-  if match_source(spec, source):
-    for t in tables:
-      if match_table(spec, t):
-        cols = t['columns'] if rev else match_columns(spec, t)
-      elif rev and spec['column']:
-        cols = match_columns(spec, t)
-      else:
-        cols = []
-      if cols:
-        excluded.append({ 'table': t, 'columns': cols })
-  return excluded
 
 def parse_exclusion(pattern):
   result = re.match(r'^(-)?(\d+:)?(#?[\w ]+)?(\.[\w ]+)?(=[\w ]+)?$', pattern)
@@ -68,16 +26,26 @@ def format_exclusion(spec):
   value = f'={spec["value"]}' if spec['value'] else ''
   return f'"{reverse}{source}{table}{column}{value}"'
 
+def print_matches(sources):
+  for s in sources:
+    if s['match']:
+      print(format_source(s['id'], s['name']))
+      for t in s['tables']:
+        if t['match']:
+          print(format_table(t['id'], t['name'], [c for c in t['columns'] if c['match']]))
+
 def command(args, config):
-  if args != ['rm'] and (len(args) < 2 or not args[0] in ('test', 'set')):
+  if not args in (['rm'], ['apply']) and (len(args) < 2 or not args[0] in ('test', 'set')):
     print('Excludes data before or during fetching from the source')
     print('Data selections for analysis follow later and are not exclusions!\n')
     print('usage: llama exclude test "[-][<source>:][[#]<table>][.<column>[=<value>]]"')
     print('       llama exclude set "[-][<source>:][[#]<table>][.<column>[=<value>]]"')
-    print('       llama exclude rm\n')
+    print('       llama exclude rm')
+    print('       llama exclude apply\n')
     print('       test       Test exclusion without storing it')
     print('       set        Set new exclusion')
-    print('       rm         Remove exclusion, interactive selection\n')
+    print('       rm         Remove exclusion, interactive selection')
+    print('       apply      Test applying all exclusions\n')
     print('       -part-     -example-   -description-')
     print('                  -           excludes everything NOT specified in the rest')
     print('       source     0:          selects source by the index')
@@ -98,19 +66,19 @@ def command(args, config):
     exc = config.exclude[i]
     config.set_exclude(e for j, e in enumerate(config.exclude) if j != i)
     print(f'Removed exclusion: {format_exclusion(exc)}')
+  elif args == ['apply']:
+    fl = Filters().add(config.exclude)
+    sources = fl.filter_columns(get_sources_with_tables(config))
+    print_matches(sources)
   else:
     exc = parse_exclusion(' '.join(args[1:]))
     require(exc, 'Invalid exclude pattern')
     if exc['source']:
       require(0 <= exc['source'] < len(config.sources), 'Invalid source index')
-    for i, src, api in enumerate_sources(config):
-      print(format_source(i, src['name']))
-      tables, cached = api.list_tables(only_cache=True)
-      require(cached, 'No table list loaded, use "list" command first')
-      excluded = match(exc, i, tables)
-      for e in excluded:
-        print(format_table(e['table']['id'], e['table']['name'], e['columns']))
-      print(f'   {len(excluded):d}/{len(tables):d} tables in exclusion')
+    fl = Filters(False).add([exc])
+    sources = fl.filter_columns(get_sources_with_tables(config))
+    print_matches(sources)
+    #print(f'   {len(excluded):d}/{len(tables):d} tables in exclusion')
     if exc['value']:
       if exc['reverse']:
         print(f'*** users not having "{exc["value"]}" in each of the above columns')

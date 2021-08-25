@@ -1,4 +1,6 @@
+from ..common import require
 from . import aplus
+from .Filters import Filters
 
 TYPES = [
   {
@@ -26,3 +28,16 @@ def create_client(src):
 
 def enumerate_sources(config):
   return [(i, src, create_client(src)) for i, src in enumerate(config.sources)]
+
+def get_sources_with_tables(config):
+  sources = []
+  for i, src, api in enumerate_sources(config):
+    tables, cached = api.list_tables(only_cache=True)
+    require(cached, 'No table list loaded, use "list" command first')
+    sources.append({
+      'id': i,
+      'name': src['name'],
+      'api': api,
+      'tables': tables,
+    })
+  return sources

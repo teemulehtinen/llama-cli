@@ -4,7 +4,7 @@ import time
 import json
 from ..common import write_json, read_json
 
-def en_h_name(name):
+def en_name(name):
   return ''.join(
     (p[3:] if p.startswith('en:') else p).replace('  ', ' ')
     for p in name.split('|')
@@ -48,19 +48,27 @@ class AplusApi(AbstractApi):
     modules = self.get_paged_json(self.EXERCISE_LIST.format(url=self.url, course_id=self.course_id))
     for m in modules:
       for e in m['exercises']:
+        entry = {
+          'module_id': m['id'],
+          'module_name': en_name(m['display_name']),
+          'id': e['id'],
+          'name': en_name(e['display_name']),
+          'max_points': e['max_points'],
+          'max_submissions': e['max_submissions'],
+        }
         time.sleep(self.REQUEST_DELAY)
         details = self.get_json(e['url'])
-        entry = {
-          'id': details['id'],
-          'name': en_h_name(details['hierarchical_name']),
-          'max_points': details['max_points'],
-          'max_submissions': details['max_submissions'],
-        }
         form = (details.get('exercise_info') or {}).get('form_spec', [])
-        entry['columns'] = [f['key'] for f in form if f['type'] != 'static']
+        entry['columns'] = [{ 'key': f['key'] } for f in form if f['type'] != 'static']
         exercises.append(entry)
     write_json(file_name, exercises)
     return exercises, False
+
+  def fetch(self):
+    pass
+
+  def fetch_related(self):
+    pass
 
   def get(self, url):
     print('> aplus GET', url)

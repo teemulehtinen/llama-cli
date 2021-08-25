@@ -5,6 +5,7 @@ from . import sources
 from . import list
 from . import privacy
 from . import exclude
+from . import fetch
 
 VERSION = '1.0.0'
 
@@ -40,6 +41,12 @@ COMMANDS = [
   {
     'cmd': 'fetch',
     'desc': 'Fetch data from sources',
+    'require': ['config', 'source'],
+    'call': fetch.command,
+  },
+  {
+    'cmd': 'anonymize',
+    'desc': 'Export anonymized data',
     'require': ['config', 'source'],
     'call': None,
   },
