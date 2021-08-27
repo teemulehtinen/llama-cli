@@ -1,4 +1,4 @@
-from .types import enumerate_sources
+from .types import Filters, get_sources_with_tables
 from .list import format_source
 from .common import require
 
@@ -8,10 +8,11 @@ def command(args, config):
     print('usage: llama fetch <target>\n')
     print('   rows      new table rows')
     print('   files     new file attachments for rows')
-  else:
-    for i, src, api in enumerate_sources(config):
-      print(format_source(i, src['name']))
-      tables, cached = api.list_tables(only_cache=True)
-      require(cached, 'No table list loaded, use "list" command first')
-      for t in tables:
-        print(t)
+  elif args == ['rows']:
+    fl = Filters().add(config.exclude)
+    sources = fl.filter_columns(get_sources_with_tables(config))
+    for s in sources:
+      for t in s['tables']:
+        s['api'].fetch_rows(t, config.privacy == 'none')
+  elif args == ['files']:
+    print('TODO')

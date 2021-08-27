@@ -19,7 +19,7 @@ class Config:
       self.load()
 
   def load(self):
-    self.data = self.join_tokens(read_json(CONFIG_FILE), read_json(TOKENS_FILE))
+    self.data = self.join_tokens(read_json(CONFIG_FILE) or {}, read_json(TOKENS_FILE) or {})
 
   def write(self):
     data, tokens = self.split_tokens(self.data)

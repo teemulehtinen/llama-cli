@@ -1,6 +1,6 @@
 import re
 from .types import Filters, get_sources_with_tables
-from .list import format_source, format_table
+from .list import print_sources
 from .common import require, input_selection
 
 def parse_exclusion(pattern):
@@ -25,14 +25,6 @@ def format_exclusion(spec):
   column = f'.{spec["column"]}' if spec['column'] else ''
   value = f'={spec["value"]}' if spec['value'] else ''
   return f'"{reverse}{source}{table}{column}{value}"'
-
-def print_matches(sources):
-  for s in sources:
-    if s['match']:
-      print(format_source(s['id'], s['name']))
-      for t in s['tables']:
-        if t['match']:
-          print(format_table(t['id'], t['name'], [c for c in t['columns'] if c['match']]))
 
 def command(args, config):
   if not args in (['rm'], ['apply']) and (len(args) < 2 or not args[0] in ('test', 'set')):
@@ -69,7 +61,7 @@ def command(args, config):
   elif args == ['apply']:
     fl = Filters().add(config.exclude)
     sources = fl.filter_columns(get_sources_with_tables(config))
-    print_matches(sources)
+    print_sources(sources)
   else:
     exc = parse_exclusion(' '.join(args[1:]))
     require(exc, 'Invalid exclude pattern')
@@ -77,7 +69,7 @@ def command(args, config):
       require(0 <= exc['source'] < len(config.sources), 'Invalid source index')
     fl = Filters(False).add([exc])
     sources = fl.filter_columns(get_sources_with_tables(config))
-    print_matches(sources)
+    print_sources(sources)
     #print(f'   {len(excluded):d}/{len(tables):d} tables in exclusion')
     if exc['value']:
       if exc['reverse']:

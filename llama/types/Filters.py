@@ -16,13 +16,7 @@ class Filters:
     return self
  
   def filter_columns(self, sources):
-    matches = []
-    for f in self.col_filters:
-      match = [self._match_source(f, s) for s in sources]
-      if (self.reverse and not f['reverse']) or (not self.reverse and f['reverse']):
-        matches.append(self._reverse_match(match))
-      else:
-        matches.append(match)
+    matches = [self.match(f, sources) for f in self.col_filters]
     out = []
     for i, s in enumerate(sources):
       source_matches = [m[i] for m in matches]
@@ -32,21 +26,22 @@ class Filters:
         out_columns = []
         for k, c in enumerate(t['columns']):
           column_matches = [m['columns'][k] for m in table_matches]
-          out_columns.append({
-            **c,
-            'match': all(m.get('match', False) for m in column_matches)
-          })
-        out_tables.append({
-          **t,
-          'columns': out_columns,
-          'match': all(m.get('match', False) for m in table_matches),
-        })
-      out.append({
-        **s,
-        'tables': out_tables,
-        'match': all(m.get('match', False) for m in source_matches),
-      })
+          if all(m.get('match', False) for m in column_matches):
+            out_columns.append(c)
+        if all(m.get('match', False) for m in table_matches):
+          out_tables.append(t)
+      if all(m.get('match', False) for m in source_matches):
+        out.append(s)
     return out
+
+  def filter_rows(self, rows):
+    print('TODO')
+
+  def match(self, filter, sources):
+    match = [self._match_source(filter, s) for s in sources]
+    if not filter['reverse'] if self.reverse else filter['reverse']:
+      return self._reverse_match(match)
+    return match
 
   @classmethod
   def _match_source(cls, filter, source):

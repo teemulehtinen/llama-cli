@@ -6,6 +6,12 @@ def format_source(i, name):
 def format_table(id, name, columns):
   return f'#{id} "{name}".[{",".join(c["key"] for c in columns)}]'
 
+def print_sources(sources):
+  for s in sources:
+    print(format_source(s['id'], s['name']))
+    for t in s['tables']:
+      print(format_table(t['id'], t['name'], t['columns']))
+
 def command(args, config):
   if args != [] and args != ['update']:
     print('Lists and updates available data tables and their fields\n')
