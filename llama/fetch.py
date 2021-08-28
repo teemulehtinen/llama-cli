@@ -15,4 +15,9 @@ def command(args, config):
       for t in s['tables']:
         s['api'].fetch_rows(t, config.privacy == 'none')
   elif args == ['files']:
-    print('TODO')
+    fl = Filters().add(config.exclude)
+    sources = fl.filter_columns(get_sources_with_tables(config))
+    for s in sources:
+      for t in s['tables']:
+        for _ in s['api'].fetch_files(t, config.privacy == 'none'):
+          pass

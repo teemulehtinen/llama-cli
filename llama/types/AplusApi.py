@@ -1,4 +1,4 @@
-import time
+import re
 from .AbstractDjangoApi import AbstractDjangoApi
 from ..common import read_json, write_json
 
@@ -9,10 +9,6 @@ class AplusApi(AbstractDjangoApi):
   EXERCISE_LIST = '{url}courses/{course_id:d}/exercises/'
   SUBMISSION_ROWS = '{url}courses/{course_id:d}/submissiondata/?exercise_id={exercise_id:d}&best=no&format=csv'
   SUBMISSION_DETAILS = '{url}submissions/{submission_id:d}'
-  REQUEST_DELAY = 1 #sec
-
-  EXERCISE_JSON = '{course_id}-exercise-list.json'
-  SUBMISSION_CSV = '{course_id}-{exercise_id}-rows.csv'
 
   STATUS_KEY = 'Status'
   TIME_KEY = 'Time'
@@ -20,7 +16,11 @@ class AplusApi(AbstractDjangoApi):
   PENALTY_KEY = 'Penalty'
   PSEUDO_USER_KEY = 'UserID'
   PSEUDO_ITEM_KEY = 'SubmissionID'
-  PERSONAL_KEYS = ['StudentID', 'Email']
+  REMOVE_KEYS = ['ExerciseID', 'Category', 'Exercise', 'Status', 'Penalty', 'Graded', 'GraderEmail', 'Notified', 'NSeen', '__grader_lang']
+  REMOVE_PERSONAL_KEYS = ['StudentID', 'Email']
+  FILE_KEY_REGEXP = r'^file\d+$'
+  FILE_VAL_REGEXP = r'^https:\/\/[^?]+'
+  PERSONAL_REGEXP = r'^# (Nimi|Opiskelijanumero): .*$'
 
   @classmethod
   def create(cls, host, token):
@@ -28,24 +28,19 @@ class AplusApi(AbstractDjangoApi):
     return AplusApi(url, token), url
 
   def __init__(self, url, token, course_id=None):
-    super().__init__(token, self.REQUEST_DELAY)
+    super().__init__(course_id, token)
     self.url = url
     self.course_id = course_id
+    self.file_key_re = re.compile(self.FILE_KEY_REGEXP)
+    self.file_val_re = re.compile(self.FILE_VAL_REGEXP)
+    self.personal_re = re.compile(self.PERSONAL_REGEXP, flags=re.I | re.M)
 
   def list_courses(self):
     courses = self.get_paged_json(self.COURSE_LIST.format(url=self.url))
     courses.sort(key=lambda c: c['id'], reverse=True)
-    return courses
-  
-  def list_tables(self, try_cache=True, only_cache=False):
-    return self.cached_json_or_get(
-      lambda: self.get_table_details(),
-      self.EXERCISE_JSON.format(course_id=self.course_id),
-      try_cache,
-      only_cache
-    )
+    return courses  
 
-  def get_table_details(self):
+  def fetch_tables_json(self):
     tables = []
     modules = self.get_paged_json(self.EXERCISE_LIST.format(url=self.url, course_id=self.course_id))
     for m in modules:
@@ -58,30 +53,22 @@ class AplusApi(AbstractDjangoApi):
           'max_points': e['max_points'],
           'max_submissions': e['max_submissions'],
         }
-        time.sleep(self.REQUEST_DELAY)
-        details = self.get_json(e['url'])
+        self.fetch_delay()
+        details = self.fetch_json(e['url'])
         form = (details.get('exercise_info') or {}).get('form_spec', [])
         entry['columns'] = [{ 'key': f['key'] } for f in form if f['type'] != 'static']
         tables.append(entry)
     return tables
 
-  def fetch_rows(self, table, personal=False, only_cache=False):
-    file_name = self.SUBMISSION_CSV.format(course_id=self.course_id, exercise_id=table['id'])
-    rows, cached = self.cached_csv_or_get(
-      lambda: self.get_filtered_rows(table, personal),
-      file_name,
-      True,
-      only_cache
-    )
+  def fetch_rows_csv(self, table, old_rows, include_personal):
 
-    # A-plus does not offer filtering by e.g. time/id to extend previously fetched rows
-    if cached and not rows is None:
-      print(f'* Cached {table["name"]}: to update, remove {file_name}')
-    return rows, cached
+    # NOTE: A-plus does not offer filtering by time or id to extend previously fetched rows
+    if not old_rows is None:
+      print(f'* Cached {table["name"]}: to update, remove {self.table_csv_name(table["id"])}')
+      return old_rows
 
-  def get_filtered_rows(self, table, personal):
     url = self.SUBMISSION_ROWS.format(url=self.url, course_id=self.course_id, exercise_id=table['id'])
-    data = self.get_csv(url)
+    data = self.fetch_csv(url)
     
     # Reject rows where status NOT 'ready'
     if self.STATUS_KEY in data:
@@ -91,7 +78,7 @@ class AplusApi(AbstractDjangoApi):
     if self.TIME_KEY in data:
       data[self.TIME_KEY] = self.col_to_datetime(data[self.TIME_KEY])
 
-    # Cancel late penalties to keep grades comparable
+    # Cancel late penalties to keep all grades comparable
     def cancel_apply(row):
       if row[self.PENALTY_KEY] > 0:
         row[self.GRADE_KEY] /= row[self.PENALTY_KEY]
@@ -99,15 +86,35 @@ class AplusApi(AbstractDjangoApi):
     if self.PENALTY_KEY in data:
       data = data.apply(cancel_apply, 1)
 
-    # Filter down to requested columns
-    cols = [self.PSEUDO_USER_KEY, self.PSEUDO_ITEM_KEY, self.TIME_KEY, self.GRADE_KEY]
-    if personal:
-      cols.extend(self.PERSONAL_KEYS)
-    cols.extend(c['key'] for c in table['columns'])
-    data = data.drop(columns=[c for c in data.columns if not c in cols]).reset_index(drop=True)
-
-    time.sleep(self.REQUEST_DELAY)
+    # Filter extra columns
+    rm_cols = self.REMOVE_KEYS
+    if not include_personal:
+      rm_cols.extend(self.REMOVE_PERSONAL_KEYS)
+    return data.drop(columns=[c for c in data.columns if c in rm_cols]).reset_index(drop=True)
+  
+  def pass_cached_rows_csv(self, data):
+    if self.TIME_KEY in data:
+      data[self.TIME_KEY] = self.col_to_datetime(data[self.TIME_KEY])
     return data
+  
+  def file_columns(self, table, rows):
+    return [c for c in rows.columns if self.file_key_re.match(c)]
+  
+  def fetch_file(self, table, row, col_name, include_personal):
+    url_match = self.file_val_re.match(row[col_name])
+    if url_match:
+      content = self.fetch(url_match.group(0)).text
+      if not include_personal:
+        content = self.personal_re.sub('', content)
+      return content
+    return None
+
+  def item_dir_name(self, row):
+    return self.ITEM_DIR.format(
+      user_id=row[self.PSEUDO_USER_KEY],
+      time=row[self.TIME_KEY].strftime(r'%Y%m%d%H%M%S')
+    )
+
 
   @staticmethod
   def en_name(name):
