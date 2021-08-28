@@ -60,7 +60,7 @@ class AbstractApi:
           )
           if not cached:
             self.fetch_delay()
-          yield { 'row': row, 'col': c, 'file_content': content }
+          yield { 'row': row, 'col': c, 'content': content, 'cached': cached }
 
 
   def fetch_tables_json(self):
