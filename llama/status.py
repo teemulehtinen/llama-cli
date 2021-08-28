@@ -1,7 +1,7 @@
 from . import exclude
 from . import privacy
 from .types import enumerate_sources
-from .common import require
+from .common import require, print_updated_line, count
 
 def status_sources(config):
   if not config.sources:
@@ -11,7 +11,17 @@ def status_sources(config):
     lines.append(f'{i:d}: {src["name"]} [{src["id"]}]')
     tables, cached = api.list_tables(only_cache=True)
     if cached:
-      lines.append(f'   {len(tables):d} tables')
+      table_n = len(tables)
+      row_n = 0
+      file_n = 0
+      print_updated_line(f'   0 %')
+      for i, t in enumerate(tables):
+        rows, _ = api.fetch_rows(t, only_cache=True)
+        row_n += 0 if rows is None else rows.shape[0]
+        file_n += count(api.fetch_files(t, only_cache=True))
+        print_updated_line(f'   {int(100 * i / table_n)} %')
+      print_updated_line('')
+      lines.append(f'   {table_n} tables, {row_n} rows & {file_n} files fetched')
       #TODO row count, date
     else:
       lines.append('   No table list loaded, use "list" command')

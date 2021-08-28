@@ -1,4 +1,5 @@
 from .types import enumerate_sources
+from .common import count
 
 def format_source(i, name):
   return f'{i:d}: {name}'
@@ -23,4 +24,11 @@ def command(args, config):
       if cached:
         print('* Using cached tables, use "list update" to refetch')
       for t in tables:
-        print(format_table(t['id'], t['name'], t['columns']))
+        print(format_table(t['id'], t['name'], t['columns']), end=' ')
+        rows, _ = api.fetch_rows(t, only_cache=True)
+        rows_n = 0 if rows is None else rows.shape[0]
+        if count(api.file_columns(t, rows)) > 0:
+          file_n = count(api.fetch_files(t, only_cache=True))
+          print(f'{rows_n} rows, {file_n} files')
+        else:
+          print(f'{rows_n} rows')
