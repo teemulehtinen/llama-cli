@@ -19,7 +19,7 @@ def status_sources(config):
       for i, t in enumerate(tables):
         rows, _ = api.fetch_rows(t, only_cache=True)
         row_n += 0 if rows is None else rows.shape[0]
-        file_n += count(api.fetch_files(t, only_cache=True))
+        file_n += 0 if rows is None else count(api.fetch_files(t, rows, only_cache=True))
         print_updated_line(f'   {int(100 * i / table_n)} %')
       print_updated_line('')
       lines.append(f'   {table_n} tables, {row_n} rows & {file_n} files fetched')

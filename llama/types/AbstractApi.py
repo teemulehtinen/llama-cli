@@ -8,6 +8,7 @@ from ..common import read_json, write_json, read_csv, write_csv, read_text, ensu
 
 class AbstractApi:
 
+  STORAGE_DIR = 'fetched'
   TABLE_LIST_JSON = '{source_id}-tables.json'
   TABLE_CSV = '{source_id}-{table_id}-rows.csv'
   TABLE_DIR = '{source_id}-{table_id}'
@@ -48,9 +49,9 @@ class AbstractApi:
       item_dir = self.item_dir_name(row)
       for c in file_cols:
         content, cached = self.cached_or_fetch(
-          lambda: read_text(os.path.join(table_dir, item_dir, c)),
+          lambda: read_text(os.path.join(self.STORAGE_DIR, table_dir, item_dir, c)),
           lambda: self.fetch_file(table, row, c, include_personal),
-          lambda r: ensure_dir_and_write_text([table_dir, item_dir, c], r),
+          lambda r: ensure_dir_and_write_text([self.STORAGE_DIR, table_dir, item_dir, c], r),
           True,
           only_cache
         )
@@ -80,10 +81,16 @@ class AbstractApi:
 
 
   def table_list_json_name(self):
-    return self.TABLE_LIST_JSON.format(source_id=self.source_id)
+    return os.path.join(
+      self.STORAGE_DIR,
+      self.TABLE_LIST_JSON.format(source_id=self.source_id)
+    )
 
   def table_csv_name(self, table_id):
-    return self.TABLE_CSV.format(source_id=self.source_id, table_id=table_id)
+    return os.path.join(
+      self.STORAGE_DIR,
+      self.TABLE_CSV.format(source_id=self.source_id, table_id=table_id)
+    )
 
   def table_dir_name(self, table_id):
     return self.TABLE_DIR.format(source_id=self.source_id, table_id=table_id)
