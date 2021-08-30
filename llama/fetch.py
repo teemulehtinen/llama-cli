@@ -19,6 +19,10 @@ def command(args, config):
     sources = fl.filter_columns(get_sources_with_tables(config))
     for s in sources:
       for t in s['tables']:
-        for r in s['api'].fetch_files(t, config.privacy == 'none'):
-          if r['cached']:
-            print(f'* Cached {r["row"][r["col"]]}')
+        rows, _ = s['api'].fetch_rows(t, config.privacy == 'none', True)
+        if rows is None:
+          print(f'Skipping {t["name"]}: fetch rows first')
+        else:
+          for r in s['api'].fetch_files(t, rows, config.privacy == 'none'):
+            if r['cached']:
+              print(f'* Cached {r["row"][r["col"]]}')

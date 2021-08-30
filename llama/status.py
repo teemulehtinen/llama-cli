@@ -1,6 +1,7 @@
+from llama.Llama import Llama
 from . import exclude
 from . import privacy
-from .types import enumerate_sources
+from .types import enumerate_sources, get_sources_with_tables
 from .common import require, print_updated_line, count
 
 def status_sources(config):
@@ -22,7 +23,6 @@ def status_sources(config):
         print_updated_line(f'   {int(100 * i / table_n)} %')
       print_updated_line('')
       lines.append(f'   {table_n} tables, {row_n} rows & {file_n} files fetched')
-      #TODO row count, date
     else:
       lines.append('   No table list loaded, use "list" command')
   return '\n'.join(lines)
@@ -45,5 +45,6 @@ def command(args, config):
 def shell(args, config):
   require(args == [], 'Unknown command')
   import code
-  llama = 8 #TODO Llama instance
-  code.interact(status(config), local=locals())
+  code.interact('Use "llama" to access data', local={
+    'llama': Llama(config),
+  })

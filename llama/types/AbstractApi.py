@@ -41,26 +41,22 @@ class AbstractApi:
       self.fetch_delay()
     return rows, cached
 
-  def fetch_files(self, table, include_personal=False, only_cache=False):
-    rows, _ = self.fetch_rows(table, include_personal, True)
-    if rows is None:
-      print(f'Skipping {table["name"]}: fetch rows first')
-    else:
-      file_cols = self.file_columns(table, rows)
-      table_dir = self.table_dir_name(table['id'])
-      for _, row in rows.iterrows():
-        item_dir = self.item_dir_name(row)
-        for c in file_cols:
-          content, cached = self.cached_or_fetch(
-            lambda: read_text(os.path.join(table_dir, item_dir, c)),
-            lambda: self.fetch_file(table, row, c, include_personal),
-            lambda r: ensure_dir_and_write_text([table_dir, item_dir, c], r),
-            True,
-            only_cache
-          )
-          if not cached:
-            self.fetch_delay()
-          yield { 'row': row, 'col': c, 'content': content, 'cached': cached }
+  def fetch_files(self, table, rows, include_personal=False, only_cache=False):
+    file_cols = self.file_columns(table, rows)
+    table_dir = self.table_dir_name(table['id'])
+    for _, row in rows.iterrows():
+      item_dir = self.item_dir_name(row)
+      for c in file_cols:
+        content, cached = self.cached_or_fetch(
+          lambda: read_text(os.path.join(table_dir, item_dir, c)),
+          lambda: self.fetch_file(table, row, c, include_personal),
+          lambda r: ensure_dir_and_write_text([table_dir, item_dir, c], r),
+          True,
+          only_cache
+        )
+        if not cached:
+          self.fetch_delay()
+        yield { 'row': row, 'col': c, 'content': content, 'cached': cached }
 
 
   def fetch_tables_json(self):
