@@ -1,6 +1,5 @@
 from ..common import require
 from . import aplus
-from .Filters import Filters
 
 TYPES = [
   {

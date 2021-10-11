@@ -26,10 +26,10 @@ class AbstractApi:
       try_cache,
       only_cache
     )
-
-  def fetch_rows(self, table, include_personal=False, only_cache=False):
+  
+  def fetch_rows(self, table, include_personal=False, only_cache=False, persons=None, columns_rm=None):
     rows, cached = self.cached_csv_or_fetch(
-      lambda: self.fetch_rows_csv(table, None, include_personal),
+      lambda: self.fetch_rows_csv(table, None, include_personal, persons, columns_rm),
       self.table_csv_name(table['id']),
       True,
       only_cache
@@ -37,7 +37,7 @@ class AbstractApi:
     if cached:
       rows = self.pass_cached_rows_csv(rows)
       if not only_cache:
-        rows = self.fetch_rows_csv(table, rows, include_personal)
+        rows = self.fetch_rows_csv(table, rows, include_personal, persons, columns_rm)
     else:
       self.fetch_delay()
     return rows, cached
@@ -48,8 +48,9 @@ class AbstractApi:
     for _, row in rows.iterrows():
       item_dir = self.item_dir_name(row)
       for c in file_cols:
+        file_name = os.path.join(self.STORAGE_DIR, table_dir, item_dir, c)
         content, cached = self.cached_or_fetch(
-          lambda: read_text(os.path.join(self.STORAGE_DIR, table_dir, item_dir, c)),
+          lambda: read_text(file_name),
           lambda: self.fetch_file(table, row, c, include_personal),
           lambda r: ensure_dir_and_write_text([self.STORAGE_DIR, table_dir, item_dir, c], r),
           True,
@@ -57,13 +58,12 @@ class AbstractApi:
         )
         if not cached:
           self.fetch_delay()
-        yield { 'row': row, 'col': c, 'content': content, 'cached': cached }
-
+        yield { 'row': row, 'col': c, 'name': file_name, 'content': content, 'cached': cached }
 
   def fetch_tables_json(self):
     raise NotImplementedError()
 
-  def fetch_rows_csv(self, table, old_rows, include_personal):
+  def fetch_rows_csv(self, table, old_rows, include_personal, persons):
     # Should optimize the queries to extend previous data, if possible.
     raise NotImplementedError()
   
@@ -78,13 +78,20 @@ class AbstractApi:
 
   def item_dir_name(self, row):
     raise NotImplementedError()
+  
+  def row_person(self, row):
+    raise NotImplementedError()
 
+  def filter_to_last_by_person(self, rows):
+    raise NotImplementedError()
+
+  def person_has_columns_value(self, rows, columns, value, reverse=False):
+    for _, row in self.filter_to_last_by_person(rows):
+      has_value = all(row[c] == value for c in columns)
+      yield self.row_person(row), not has_value if reverse else has_value
 
   def table_list_json_name(self):
-    return os.path.join(
-      self.STORAGE_DIR,
-      self.TABLE_LIST_JSON.format(source_id=self.source_id)
-    )
+    return self.TABLE_LIST_JSON.format(source_id=self.source_id)
 
   def table_csv_name(self, table_id):
     return os.path.join(
@@ -94,7 +101,6 @@ class AbstractApi:
 
   def table_dir_name(self, table_id):
     return self.TABLE_DIR.format(source_id=self.source_id, table_id=table_id)
-
 
   def fetch_delay(self):
     time.sleep(self.REQUEST_DELAY)

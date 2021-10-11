@@ -1,6 +1,7 @@
-from .types import Filters, get_sources_with_tables
+from llama.common.files import write_json
+from .types import get_sources_with_tables
 from .list import format_source
-from .common import require
+from .common import require, Filters
 
 def command(args, config):
   if not args in (['rows'], ['files']):
@@ -8,16 +9,18 @@ def command(args, config):
     print('usage: llama fetch <target>\n')
     print('   rows      new table rows')
     print('   files     new file attachments for rows')
+    print('   meta      TODO new meta attachments for rows')
   elif args == ['rows']:
-    fl = Filters().add(config.exclude)
-    sources = fl.filter_columns(get_sources_with_tables(config))
-    for s in sources:
+    sources = get_sources_with_tables(config)
+    fl = Filters(config.exclude)
+    if fl.has_person_filters():
+      persons = fl.person_select(sources, config.privacy == 'none')
+    for s in fl.filter(sources):
       for t in s['tables']:
-        s['api'].fetch_rows(t, config.privacy == 'none')
+        s['api'].fetch_rows(t, config.privacy == 'none', False, persons, t['columns'])
   elif args == ['files']:
-    fl = Filters().add(config.exclude)
-    sources = fl.filter_columns(get_sources_with_tables(config))
-    for s in sources:
+    fl = Filters(config.exclude)
+    for s in fl.filter(get_sources_with_tables(config)):
       for t in s['tables']:
         rows, _ = s['api'].fetch_rows(t, config.privacy == 'none', True)
         if rows is None:

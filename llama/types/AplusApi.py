@@ -14,7 +14,7 @@ class AplusApi(AbstractDjangoApi):
   TIME_KEY = 'Time'
   GRADE_KEY = 'Grade'
   PENALTY_KEY = 'Penalty'
-  PSEUDO_USER_KEY = 'UserID'
+  PSEUDO_PERSON_KEY = 'UserID'
   PSEUDO_ITEM_KEY = 'SubmissionID'
   REMOVE_KEYS = ['ExerciseID', 'Category', 'Exercise', 'Status', 'Penalty', 'Graded', 'GraderEmail', 'Notified', 'NSeen', '__grader_lang']
   REMOVE_PERSONAL_KEYS = ['StudentID', 'Email']
@@ -60,7 +60,7 @@ class AplusApi(AbstractDjangoApi):
         tables.append(entry)
     return tables
 
-  def fetch_rows_csv(self, table, old_rows, include_personal):
+  def fetch_rows_csv(self, table, old_rows, include_personal, persons, columns_rm):
 
     # NOTE: A-plus does not offer filtering by time or id to extend previously fetched rows
     if not old_rows is None:
@@ -73,6 +73,10 @@ class AplusApi(AbstractDjangoApi):
     # Reject rows where status NOT 'ready'
     if self.STATUS_KEY in data:
       data = data[data[self.STATUS_KEY] == 'ready']
+    
+    # Filter rows by persons
+    if not persons is None:
+      data = data[data[self.PSEUDO_PERSON_KEY] in persons]
 
     # Parse time
     if self.TIME_KEY in data:
@@ -90,6 +94,8 @@ class AplusApi(AbstractDjangoApi):
     rm_cols = self.REMOVE_KEYS
     if not include_personal:
       rm_cols.extend(self.REMOVE_PERSONAL_KEYS)
+    if columns_rm:
+      rm_cols.extend(columns_rm)
     return data.drop(columns=[c for c in data.columns if c in rm_cols]).reset_index(drop=True)
   
   def pass_cached_rows_csv(self, data):
@@ -111,10 +117,17 @@ class AplusApi(AbstractDjangoApi):
 
   def item_dir_name(self, row):
     return self.ITEM_DIR.format(
-      user_id=row[self.PSEUDO_USER_KEY],
+      user_id=row[self.PSEUDO_PERSON_KEY],
       time=row[self.TIME_KEY].strftime(r'%Y%m%d%H%M%S')
     )
+  
+  def row_person(self, row):
+    return row[self.PSEUDO_PERSON_KEY]
 
+  def filter_to_last_by_person(self, rows):
+    return rows\
+      .sort_values(by=self.TIME_KEY)\
+      .drop_duplicates(self.PSEUDO_PERSON_KEY, keep='last', ignore_index=True)
 
   @staticmethod
   def en_name(name):

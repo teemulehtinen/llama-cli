@@ -1,7 +1,7 @@
 import re
-from .types import Filters, get_sources_with_tables
+from .types import get_sources_with_tables
 from .list import print_sources
-from .common import require, input_selection
+from .common import require, input_selection, Filters
 
 def parse_exclusion(pattern):
   result = re.match(r'^(-)?(\d+:)?(#?[\w ]+)?(\.[\w ]+)?(=[\w ]+)?$', pattern)
@@ -37,14 +37,14 @@ def command(args, config):
     print('       test       Test exclusion without storing it')
     print('       set        Set new exclusion')
     print('       rm         Remove exclusion, interactive selection')
-    print('       apply      Test applying all exclusions\n')
+    print('       apply      Test applying all other than person exclusions\n')
     print('       -part-     -example-   -description-')
     print('                  -           excludes everything NOT specified in the rest')
     print('       source     0:          selects source by the index')
     print('       table      #123        selects table by the id')
     print('                  feedback    selects table by text included in the name')
     print('       column     .field_1    selects column by text included in the name')
-    print('       value      =yes        selects users by text included in the column\n')
+    print('       value      =yes        selects persons by text included in the column\n')
     print('       llama exclude set #424.secret')
     print('       llama exclude set "-research consent=yes"\n')
     print('Note that whole tables or columns in any table can be selected by omitting')
@@ -59,23 +59,23 @@ def command(args, config):
     config.set_exclude(e for j, e in enumerate(config.exclude) if j != i)
     print(f'Removed exclusion: {format_exclusion(exc)}')
   elif args == ['apply']:
-    fl = Filters().add(config.exclude)
-    sources = fl.filter_columns(get_sources_with_tables(config))
-    print_sources(sources)
+    fl = Filters(config.exclude)
+    print_sources(fl.filter(get_sources_with_tables(config)))
   else:
     exc = parse_exclusion(' '.join(args[1:]))
     require(exc, 'Invalid exclude pattern')
     if exc['source']:
       require(0 <= exc['source'] < len(config.sources), 'Invalid source index')
-    fl = Filters(False).add([exc])
-    sources = fl.filter_columns(get_sources_with_tables(config))
-    print_sources(sources)
-    #print(f'   {len(excluded):d}/{len(tables):d} tables in exclusion')
-    if exc['value']:
+    fl = Filters([exc])
+    if fl.has_person_filters():
+      _, sources = fl.person_filter_columns(get_sources_with_tables(config))[0]
+      print_sources(sources)
       if exc['reverse']:
         print(f'*** users not having "{exc["value"]}" in each of the above columns')
       else:
         print(f'*** users having "{exc["value"]}" in any of the above columns')
+    else:
+      print_sources(fl.filter(get_sources_with_tables(config)))
     if args[0] == 'set':
       config.set_exclude(config.exclude + [exc])
       print(f'Added exclusion: {format_exclusion(exc)}')
