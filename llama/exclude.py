@@ -1,7 +1,8 @@
 import re
 from .types import get_sources_with_tables
 from .list import print_sources
-from .common import require, input_selection, Filters
+from .Filters import Filters
+from .common import require, input_selection
 
 def parse_exclusion(pattern):
   result = re.match(r'^(-)?(\d+:)?(#?[\w ]+)?(\.[\w ]+)?(=[\w ]+)?$', pattern)
@@ -81,6 +82,13 @@ def command(args, config):
       print(f'Added exclusion: {format_exclusion(exc)}')
 
 def status(config):
+  lines = []
   if config.exclude:
-    return ' '.join(['Exclude:'] + [format_exclusion(e) for e in config.exclude])
-  return None
+    lines.append(' '.join(['Exclude:'] + [format_exclusion(e) for e in config.exclude]))
+  persons = Filters.person_status()
+  if persons:
+    total = len(persons)
+    included = len(p for p in persons if p['included'])
+    percent = round(100 * included / total)
+    lines.append(f'{included}/{total} ({percent}%) persons included')
+  return '\n'.join(lines) if lines else None

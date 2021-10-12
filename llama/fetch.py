@@ -1,7 +1,6 @@
-from llama.common.files import write_json
 from .types import get_sources_with_tables
-from .list import format_source
-from .common import require, Filters
+from .Filters import Filters
+from .common import write_json
 
 def command(args, config):
   if not args in (['rows'], ['files']):
@@ -13,8 +12,7 @@ def command(args, config):
   elif args == ['rows']:
     sources = get_sources_with_tables(config)
     fl = Filters(config.exclude)
-    if fl.has_person_filters():
-      persons = fl.person_select(sources, config.privacy == 'none')
+    persons = fl.person_select(sources, config.privacy == 'none') if fl.has_person_filters() else None
     for s in fl.filter(sources):
       for t in s['tables']:
         s['api'].fetch_rows(t, config.privacy == 'none', False, persons, t['columns'])
@@ -22,10 +20,10 @@ def command(args, config):
     fl = Filters(config.exclude)
     for s in fl.filter(get_sources_with_tables(config)):
       for t in s['tables']:
-        rows, _ = s['api'].fetch_rows(t, config.privacy == 'none', True)
+        rows, _ = s['api'].fetch_rows(t, only_cache=True)
         if rows is None:
           print(f'Skipping {t["name"]}: fetch rows first')
         else:
-          for r in s['api'].fetch_files(t, rows, config.privacy == 'none'):
+          for r in s['api'].fetch_files(t, rows, only_cache=True):
             if r['cached']:
               print(f'* Cached {r["row"][r["col"]]}')

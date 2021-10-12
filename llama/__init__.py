@@ -7,6 +7,7 @@ from . import list
 from . import privacy
 from . import exclude
 from . import fetch
+from . import anonymize
 
 VERSION = '1.0.0'
 
@@ -49,7 +50,7 @@ COMMANDS = [
     'cmd': 'anonymize',
     'desc': 'Export anonymized data',
     'require': ['config', 'source'],
-    'call': None,
+    'call': anonymize.command,
   },
   {
     'cmd': 'shell',

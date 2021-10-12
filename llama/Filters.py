@@ -1,4 +1,5 @@
-from llama.common.files import write_json
+from .common.files import read_json, write_json
+from .operations import person_has_columns_value
 
 class Filters:
   
@@ -45,12 +46,11 @@ class Filters:
       for s in sources:
         for t in s['tables']:
           rows, _ = s['api'].fetch_rows(t, include_personal)
-          rows = s['api'].filter_to_last_by_person(rows)
-          for p, m in s['api'].person_has_columns_value(rows, t['columns'], f['value'], f['reverse']):
+          for p, m in person_has_columns_value(rows, t['columns'], f['value'], f['reverse']):
             persons[p] = persons.get(p, True) and m
     write_json(self.PERSON_SELECT_JSON, [{ 'person': p, 'included': m } for p, m in persons])
     return [p for p, m in persons if m]
-
+  
   def filter(self, sources):
     out = sources
     for f in self.inclusions:
@@ -58,6 +58,15 @@ class Filters:
     for f in self.exclusions:
       out = self._exclusion(f, out)
     return out
+
+  @classmethod
+  def person_status(cls):
+    return read_json(cls.PERSON_SELECT_JSON)
+  
+  @classmethod
+  def person_included(cls):
+    status = cls.person_status()
+    return [p['person'] for p in status if p['included']] if status else None
 
   @classmethod
   def _inclusion(cls, filter, sources):

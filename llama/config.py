@@ -4,6 +4,11 @@ from .common import read_json, write_json
 
 CONFIG_FILE = '.llama'
 TOKENS_FILE = '.tokens'
+STORAGE_DIR = 'fetched'
+EXPORT_DIR = 'export'
+
+TIME_KEY = 'Time'
+PERSON_KEY = 'Person'
 
 class Config:
 
@@ -59,16 +64,18 @@ class Config:
 
   @staticmethod
   def write_gitignore():
-    ignore_line = f'{TOKENS_FILE}\n'
+    ignore_lines = [f'{TOKENS_FILE}\n', f'{STORAGE_DIR}/\n']
     if not os.path.isfile('.gitignore'):
       with open('.gitignore', 'w') as f:
-        f.write(ignore_line)
+        for l in ignore_lines:
+          f.write(l)
     else:
       with open('.gitignore', 'r+') as f:
         for line in f:
-          if line == ignore_line:
-            return
-        f.write(ignore_line)
+          if line in ignore_lines:
+            ignore_lines.remove(line)
+        for l in ignore_lines:
+          f.write(l)
 
   @staticmethod
   def split_tokens(data):

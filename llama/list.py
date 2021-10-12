@@ -1,4 +1,5 @@
 from .types import enumerate_sources
+from .operations import last_time
 from .common import count
 
 def format_source(i, name):
@@ -29,6 +30,6 @@ def command(args, config):
         rows_n = 0 if rows is None else rows.shape[0]
         if not rows is None and count(api.file_columns(t, rows)) > 0:
           file_n = count(api.fetch_files(t, rows, only_cache=True))
-          print(f'{rows_n} rows, {file_n} files')
+          print(f'{rows_n} rows, {file_n} files, last {last_time(rows)}')
         else:
-          print(f'{rows_n} rows')
+          print(f'{rows_n} rows, last {last_time(rows)}')

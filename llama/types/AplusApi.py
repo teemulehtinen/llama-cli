@@ -1,6 +1,6 @@
 import re
+from ..config import PERSON_KEY
 from .AbstractDjangoApi import AbstractDjangoApi
-from ..common import read_json, write_json
 
 class AplusApi(AbstractDjangoApi):
 
@@ -11,13 +11,13 @@ class AplusApi(AbstractDjangoApi):
   SUBMISSION_DETAILS = '{url}submissions/{submission_id:d}'
 
   STATUS_KEY = 'Status'
-  TIME_KEY = 'Time'
   GRADE_KEY = 'Grade'
   PENALTY_KEY = 'Penalty'
-  PSEUDO_PERSON_KEY = 'UserID'
+  PSEUDO_USER_KEY = 'UserID'
   PSEUDO_ITEM_KEY = 'SubmissionID'
-  REMOVE_KEYS = ['ExerciseID', 'Category', 'Exercise', 'Status', 'Penalty', 'Graded', 'GraderEmail', 'Notified', 'NSeen', '__grader_lang']
+  REMOVE_KEYS = [PSEUDO_USER_KEY, STATUS_KEY, PENALTY_KEY, 'ExerciseID', 'Category', 'Exercise', 'Graded', 'GraderEmail', 'Notified', 'NSeen', '__grader_lang']
   REMOVE_PERSONAL_KEYS = ['StudentID', 'Email']
+  REMOVE_AT_EXPORT = [PSEUDO_ITEM_KEY] + REMOVE_PERSONAL_KEYS
   FILE_KEY_REGEXP = r'^file\d+$'
   FILE_VAL_REGEXP = r'^https:\/\/[^?]+'
   PERSONAL_REGEXP = r'^# (Nimi|Opiskelijanumero): .*$'
@@ -73,14 +73,10 @@ class AplusApi(AbstractDjangoApi):
     # Reject rows where status NOT 'ready'
     if self.STATUS_KEY in data:
       data = data[data[self.STATUS_KEY] == 'ready']
-    
+
     # Filter rows by persons
     if not persons is None:
       data = data[data[self.PSEUDO_PERSON_KEY] in persons]
-
-    # Parse time
-    if self.TIME_KEY in data:
-      data[self.TIME_KEY] = self.col_to_datetime(data[self.TIME_KEY])
 
     # Cancel late penalties to keep all grades comparable
     def cancel_apply(row):
@@ -90,6 +86,9 @@ class AplusApi(AbstractDjangoApi):
     if self.PENALTY_KEY in data:
       data = data.apply(cancel_apply, 1)
 
+    # Use default column keys, TIME_KEY matches
+    data[PERSON_KEY] = data[self.PSEUDO_USER_KEY]
+
     # Filter extra columns
     rm_cols = self.REMOVE_KEYS
     if not include_personal:
@@ -97,12 +96,7 @@ class AplusApi(AbstractDjangoApi):
     if columns_rm:
       rm_cols.extend(columns_rm)
     return data.drop(columns=[c for c in data.columns if c in rm_cols]).reset_index(drop=True)
-  
-  def pass_cached_rows_csv(self, data):
-    if self.TIME_KEY in data:
-      data[self.TIME_KEY] = self.col_to_datetime(data[self.TIME_KEY])
-    return data
-  
+
   def file_columns(self, table, rows):
     return [c for c in rows.columns if self.file_key_re.match(c)]
   
@@ -115,19 +109,8 @@ class AplusApi(AbstractDjangoApi):
       return content
     return None
 
-  def item_dir_name(self, row):
-    return self.ITEM_DIR.format(
-      user_id=row[self.PSEUDO_PERSON_KEY],
-      time=row[self.TIME_KEY].strftime(r'%Y%m%d%H%M%S')
-    )
-  
-  def row_person(self, row):
-    return row[self.PSEUDO_PERSON_KEY]
-
-  def filter_to_last_by_person(self, rows):
-    return rows\
-      .sort_values(by=self.TIME_KEY)\
-      .drop_duplicates(self.PSEUDO_PERSON_KEY, keep='last', ignore_index=True)
+  def drop_for_export(self, table, rows):
+    return rows.drop(columns=[c for c in rows.columns if c in self.REMOVE_AT_EXPORT]).reset_index(drop=True)
 
   @staticmethod
   def en_name(name):
