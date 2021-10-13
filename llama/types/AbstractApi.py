@@ -4,7 +4,7 @@ import io
 import json
 import requests
 import pandas
-from ..common import read_json, write_json, read_csv, write_csv, read_text, ensure_dir_and_write_text
+from ..common import read_json, write_json, read_csv, write_csv, read_text, write_text
 from ..config import PERSON_KEY, STORAGE_DIR, EXPORT_DIR, TIME_KEY
 
 class AbstractApi:
@@ -27,16 +27,19 @@ class AbstractApi:
       only_cache
     )
   
-  def fetch_rows(self, table, include_personal=False, only_cache=False, persons=None, columns_rm=None):
+  def fetch_rows(self, table, include_personal=False, only_cache=False, select_persons=None, exclude_columns=None):
     rows, cached = self.cached_csv_or_fetch(
-      lambda: self.fetch_rows_csv(table, None, include_personal, persons, columns_rm),
+      lambda: self.fetch_rows_csv(table, None, include_personal, select_persons, exclude_columns),
       self.table_csv_name(table['id']),
       True,
       only_cache
     )
     if cached:
       if not only_cache:
-        rows = self.fetch_rows_csv(table, rows, include_personal, persons, columns_rm)
+        new_rows = self.fetch_rows_csv(table, rows, include_personal, select_persons, exclude_columns)
+        if not new_rows is None:
+          write_csv(self.table_csv_name(table['id']), new_rows)
+          rows = new_rows
     else:
       self.fetch_delay()
     rows[TIME_KEY] = pandas.to_datetime(rows[TIME_KEY])
@@ -48,20 +51,31 @@ class AbstractApi:
     for _, row in rows.iterrows():
       item_dir = self.item_dir_name(row)
       for c in file_cols:
-        file_name = os.path.join(STORAGE_DIR, table_dir, item_dir, c)
+        path = (STORAGE_DIR, table_dir, item_dir, c)
         content, cached = self.cached_or_fetch(
-          lambda: read_text(file_name),
+          lambda: read_text(path),
           lambda: self.fetch_file(table, row, c, include_personal),
-          lambda r: ensure_dir_and_write_text([STORAGE_DIR, table_dir, item_dir, c], r),
+          lambda r: write_text(path, r),
           True,
           only_cache
         )
         if not cached:
           self.fetch_delay()
-        yield { 'row': row, 'col': c, 'name': file_name, 'content': content, 'cached': cached }
+        yield { 'row': row, 'col': c, 'path': path, 'content': content, 'cached': cached }
 
-  def write_export(self, table, rows):
-    write_csv(self.table_csv_name(table['id'], export=True), self.drop_for_export(table, rows))
+  def write_export(self, table, rows, person_map):
+    data = self.drop_for_export(table, rows)
+    data[PERSON_KEY] = data[PERSON_KEY].map(person_map)
+    data = data.dropna(subset=[PERSON_KEY]).reset_index(drop=True)
+    table_dir = self.table_dir_name(table['id'])
+    file_cols = self.file_columns(table, rows)
+    def rewrite_files(row):
+      item_dir = self.item_dir_name(row)
+      for c in file_cols:
+        row[c] = os.path.join(table_dir, item_dir, c)
+      return row
+    data = data.apply(rewrite_files, 1)
+    write_csv(self.table_csv_name(table['id'], export=True), data)
 
   def fetch_tables_json(self):
     raise NotImplementedError()
@@ -80,12 +94,14 @@ class AbstractApi:
     raise NotImplementedError()
 
   def table_list_json_name(self):
-    return self.TABLE_LIST_JSON.format(source_id=self.source_id)
+    return (
+      self.TABLE_LIST_JSON.format(source_id=self.source_id),
+    )
 
   def table_csv_name(self, table_id, export=False):
-    return os.path.join(
+    return (
       EXPORT_DIR if export else STORAGE_DIR,
-      self.TABLE_CSV.format(source_id=self.source_id, table_id=table_id)
+      self.TABLE_CSV.format(source_id=self.source_id, table_id=table_id),
     )
 
   def table_dir_name(self, table_id):
@@ -110,20 +126,20 @@ class AbstractApi:
   def fetch_csv(self, url):
     return pandas.read_csv(io.StringIO(self.fetch(url).text))
 
-  def cached_json_or_fetch(self, fetch, file_name, try_cache=True, only_cache=False):
+  def cached_json_or_fetch(self, fetch, path, try_cache=True, only_cache=False):
     return self.cached_or_fetch(
-      lambda: read_json(file_name),
+      lambda: read_json(path),
       lambda: fetch(),
-      lambda r: write_json(file_name, r),
+      lambda r: write_json(path, r),
       try_cache,
       only_cache
     )
 
-  def cached_csv_or_fetch(self, fetch, file_name, try_cache=True, only_cache=False):
+  def cached_csv_or_fetch(self, fetch, path, try_cache=True, only_cache=False):
     return self.cached_or_fetch(
-      lambda: read_csv(file_name),
+      lambda: read_csv(path),
       lambda: fetch(),
-      lambda r: write_csv(file_name, r),
+      lambda r: write_csv(path, r),
       try_cache,
       only_cache
     )
@@ -136,5 +152,6 @@ class AbstractApi:
       elif only_cache:
         return None, False
     result = fetch()
-    write(result)
+    if not result is None:
+      write(result)
     return result, False

@@ -1,8 +1,8 @@
 import random
-from .config import PERSON_KEY
 from .types import get_sources_with_tables
 from .Filters import Filters
-from .common import require
+from .common import require, write_text
+from .config import PERSON_KEY, EXPORT_DIR
 
 def add_to_person_map(person_map, person_included, rows):
   for p in rows[PERSON_KEY]:
@@ -18,19 +18,12 @@ def command(args, config):
   fl = Filters(config.exclude)
   for s in fl.filter(get_sources_with_tables(config)):
     for t in s['tables']:
-
-      # Export table rows
       rows, _ = s['api'].fetch_rows(t, only_cache=True)
       if rows is None:
         print(f'Skipping {t["name"]}: fetch rows first')
       else:
         add_to_person_map(person_map, person_included, rows)
-        rows[PERSON_KEY] = rows[PERSON_KEY].map(person_map)
-        rows.dropna(subset=[PERSON_KEY], inplace=True)
-        s['api'].write_export(t, rows)
-        
-        # Copy files
-        #for r in s['api'].fetch_files(t, rows, only_cache=True):
-        #  pass
-
+        for r in s['api'].fetch_files(t, rows, only_cache=True):
+          write_text((EXPORT_DIR,) + r['path'][1:], r['content'])
+        s['api'].write_export(t, rows, person_map)
         print(f'Anonymized {t["name"]}')

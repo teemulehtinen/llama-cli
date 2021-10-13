@@ -65,7 +65,7 @@ class AplusApi(AbstractDjangoApi):
     # NOTE: A-plus does not offer filtering by time or id to extend previously fetched rows
     if not old_rows is None:
       print(f'* Cached {table["name"]}: to update, remove {self.table_csv_name(table["id"])}')
-      return old_rows
+      return None
 
     url = self.SUBMISSION_ROWS.format(url=self.url, course_id=self.course_id, exercise_id=table['id'])
     data = self.fetch_csv(url)
@@ -110,7 +110,7 @@ class AplusApi(AbstractDjangoApi):
     return None
 
   def drop_for_export(self, table, rows):
-    return rows.drop(columns=[c for c in rows.columns if c in self.REMOVE_AT_EXPORT]).reset_index(drop=True)
+    return rows.drop(columns=[c for c in rows.columns if c in self.REMOVE_AT_EXPORT])
 
   @staticmethod
   def en_name(name):
