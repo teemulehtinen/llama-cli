@@ -40,6 +40,7 @@ class AbstractApi:
         if not new_rows is None:
           write_csv(self.table_csv_name(table['id']), new_rows)
           rows = new_rows
+          self.fetch_delay()
     else:
       self.fetch_delay()
     rows[TIME_KEY] = pandas.to_datetime(rows[TIME_KEY])
@@ -59,9 +60,24 @@ class AbstractApi:
           True,
           only_cache
         )
-        if not cached:
+        if not content is None and not cached:
           self.fetch_delay()
         yield { 'row': row, 'col': c, 'path': path, 'content': content, 'cached': cached }
+
+  def fetch_meta(self, table, rows, include_personal=False, only_cache=False):
+    table_dir = self.table_dir_name(table['id'])
+    for _, row in rows.iterrows():
+      item_dir = self.item_dir_name(row)
+      path = (STORAGE_DIR, table_dir, item_dir, 'meta.json')
+      content, cached = self.cached_json_or_fetch(
+        lambda: self.fetch_meta_json(table, row, include_personal),
+        path,
+        True,
+        only_cache
+      )
+      if not content is None and not cached:
+        self.fetch_delay()
+      yield { 'row': row, 'path': path, 'content': content, 'cached': cached }
 
   def write_export(self, table, rows, person_map):
     data = self.drop_for_export(table, rows)
@@ -84,6 +100,9 @@ class AbstractApi:
     # Should optimize the queries to extend previous data, if possible.
     raise NotImplementedError()
   
+  def fetch_meta_json(self, table, row, include_personal):
+    raise NotImplementedError()
+
   def file_columns(self, table, rows):
     raise NotImplementedError()
 

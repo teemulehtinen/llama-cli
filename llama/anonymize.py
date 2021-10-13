@@ -1,7 +1,7 @@
 import random
 from .types import get_sources_with_tables
 from .Filters import Filters
-from .common import require, write_text
+from .common import require, write_text, write_json
 from .config import PERSON_KEY, EXPORT_DIR
 
 def add_to_person_map(person_map, person_included, rows):
@@ -24,6 +24,10 @@ def command(args, config):
       else:
         add_to_person_map(person_map, person_included, rows)
         for r in s['api'].fetch_files(t, rows, only_cache=True):
-          write_text((EXPORT_DIR,) + r['path'][1:], r['content'])
+          if not r['content'] is None:
+            write_text((EXPORT_DIR,) + r['path'][1:], r['content'])
+        for r in s['api'].fetch_meta(t, rows, only_cache=True):
+          if not r['content'] is None:
+            write_json((EXPORT_DIR,) + r['path'][1:], r['content'])
         s['api'].write_export(t, rows, person_map)
         print(f'Anonymized {t["name"]}')

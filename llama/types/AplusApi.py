@@ -18,6 +18,7 @@ class AplusApi(AbstractDjangoApi):
   REMOVE_KEYS = [PSEUDO_USER_KEY, STATUS_KEY, PENALTY_KEY, 'ExerciseID', 'Category', 'Exercise', 'Graded', 'GraderEmail', 'Notified', 'NSeen', '__grader_lang']
   REMOVE_PERSONAL_KEYS = ['StudentID', 'Email']
   REMOVE_AT_EXPORT = [PSEUDO_ITEM_KEY] + REMOVE_PERSONAL_KEYS
+  META_KEYS = ['exercise', 'submission_time', 'grading_time', 'grade', 'late_penalty_applied', 'feedback', 'grading_data']
   FILE_KEY_REGEXP = r'^file\d+$'
   FILE_VAL_REGEXP = r'^https:\/\/[^?]+'
   PERSONAL_REGEXP = r'^# (Nimi|Opiskelijanumero): .*$'
@@ -108,6 +109,11 @@ class AplusApi(AbstractDjangoApi):
         content = self.personal_re.sub('', content)
       return content
     return None
+
+  def fetch_meta_json(self, table, row, include_personal):
+    url = self.SUBMISSION_DETAILS.format(url=self.url, submission_id=row[self.PSEUDO_ITEM_KEY])
+    data = self.fetch_json(url)
+    return { k: data.get(k) for k in self.META_KEYS }
 
   def drop_for_export(self, table, rows):
     return rows.drop(columns=[c for c in rows.columns if c in self.REMOVE_AT_EXPORT])
