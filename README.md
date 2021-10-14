@@ -30,13 +30,13 @@ computer science majors at Aalto University.
 Llama CLI is available at PyPI. It has a number of automatically installed
 dependencies, most notably `pandas`, `numpy`, and `requests`.
 
-   % python3 -m pip install llama-cli
-   % llama
+      % python3 -m pip install llama-cli
+      % llama
 
 OR contained in a virtual environment (directory)
 
-   % python3 -m venv .venv && .venv/bin/pip install llama-cli
-   % .venv/bin/llama
+      % python3 -m venv .venv && .venv/bin/pip install llama-cli
+      % .venv/bin/llama
 
 ## Instructions
 
@@ -45,19 +45,19 @@ will be stored in that directory – little bit like when working with git repos
 One work directory can connect with multiple data sources and one should select
 the sources that the current research or analysis project requires.
 
-    % llama
-   Llama CLI fetches and preprocesses learning data
+      % llama
+      Llama CLI fetches and preprocesses learning data
 
-   usage: llama <cmd> [<args>]
+      usage: llama <cmd> [<args>]
 
-      status      Show the working tree status
-      source      Manage sources for learning data
-      list        List available data tables and columns
-      privacy     Configure privacy (default: pseudoanonymous)
-      exclude     Exclude selected tables, columns, or persons at fetch
-      fetch       Fetch data from sources
-      anonymize   Export anonymized data
-      shell       Open python REPL with 'llama' instance to fetched data
+         status      Show the working tree status
+         source      Manage sources for learning data
+         list        List available data tables and columns
+         privacy     Configure privacy (default: pseudoanonymous)
+         exclude     Exclude selected tables, columns, or persons at fetch
+         fetch       Fetch data from sources
+         anonymize   Export anonymized data
+         shell       Open python REPL with 'llama' instance to fetched data
 
 1. Use `llama source add` to interactively connect with data sources.
    The required addresses and keys will be prompted when required.
@@ -74,9 +74,13 @@ the sources that the current research or analysis project requires.
    Use `llama anonymize` to produce `export` directory that can be e.g. stored in
    research repository when the security measures and research consent allow it.
 
-The `llama.Llama.Llama` Python class offers some accessors and samplers to
-the data for further processing and analysis, as well as interactive testing
-via `llama shell`. Naturally, the raw CSV and other files are available.
+## Output
+
+The Python class `from llama import Llama` offers some programmatic accessors
+and samplers to the data for further processing and analysis, as well as
+interactive testing via `llama shell`.
+
+Naturally, the raw CSV and other files are available in `export` directory.
 
 ## TODO
 

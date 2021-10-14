@@ -31,7 +31,7 @@ class Config:
     write_json(CONFIG_FILE, data)
     if tokens:
       write_json(TOKENS_FILE, tokens)
-      self.write_gitignore()
+    self.write_gitignore()
     self.exists = True
 
   @property
