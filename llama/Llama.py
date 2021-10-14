@@ -24,7 +24,7 @@ class Llama:
   
   def get(self, source=None, table=None, files=False):
     for s, t in self.select_tables(source, table):
-      rows, _ = s['api'].fetch_rows(t, only_cache=True)
+      rows = s['api'].get_export_rows(t)
       if not rows is None:
         if files:
           if len(list(s['api'].file_columns(t, rows))) > 0:
@@ -33,25 +33,34 @@ class Llama:
           yield s, t, rows
   
   def name(self, source=None, table=None, files=False):
-    for source, table, rows in self.get(source, table, files):
+    for s, t, rows in self.get(source, table, files):
       yield {
-        'source_id': source['id'],
-        'table_id': table['id'],
-        'table': table['name'],
+        'source_id': s['id'],
+        'table_id': t['id'],
+        'table': t['name'],
         'rows_n': rows.shape[0],
       }
-
-  def _sample(self, n, source, table):
-    for s, t in self.select_tables(source, table):
-      rows, _ = s['api'].fetch_rows(t, only_cache=True)
-      yield s, t, None if rows is None else rows.sample(n)
   
-  def sample(self, n=10, source=None, table=None):
-    for _, _, sample in self._sample(n, source, table):
-      if not sample is None:
-        yield sample
+  def get_files(self, source=None, table=None):
+    for s, t, rows in self.get(source, table, True):
+      for r in s['api'].get_export_files(t, rows):
+        yield { 'source': s['id'], 'table': t, **r }
+  
+  def get_meta(self, source=None, table=None, files=False):
+    for s, t, rows in self.get(source, table, files):
+      for r in s['api'].get_export_meta(t, rows):
+        yield { 'source': s['id'], 'table': t, **r }
+
+  def sample(self, n=10, source=None, table=None, files=False):
+    for s, t, rows in self.get(source, table, files):
+      yield s, t, None if rows is None else rows.sample(n)
 
   def sample_files(self, n=10, source=None, table=None):
-    for s, t, sample in self._sample(n, source, table):
-      if not sample is None:
-        return [f for f in s['api'].fetch_files(t, sample, only_cache=True)]
+    for s, t, sample in self.sample(n, source, table, True):
+      for r in s['api'].get_export_files(t, sample):
+        yield { 'source': s['id'], 'table': t, **r }
+
+  def sample_meta(self, n=10, source=None, table=None, files=False):
+    for s, t, sample in self.sample(n, source, table, files):
+      for r in s['api'].get_export_meta(t, sample):
+        yield { 'source': s['id'], 'table': t, **r }

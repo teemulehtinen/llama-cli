@@ -92,6 +92,24 @@ class AbstractApi:
       return row
     data = data.apply(rewrite_files, 1)
     write_csv(self.table_csv_name(table['id'], export=True), data)
+  
+  def get_export_rows(self, table):
+    return read_csv(self.table_csv_name(table['id'], export=True))
+
+  def get_export_files(self, table, rows):
+    file_cols = self.file_columns(table, rows)
+    table_dir = self.table_dir_name(table['id'])
+    for _, row in rows.iterrows():
+      item_dir = self.item_dir_name(row)
+      for c in file_cols:
+        path = (EXPORT_DIR, table_dir, item_dir, c)
+        yield { 'row': row, 'col': c, 'path': path, 'content': read_json(path) }
+
+  def get_export_meta(self, table, rows):
+    table_dir = self.table_dir_name(table['id'])
+    for _, row in rows.iterrows():
+      path = (EXPORT_DIR, table_dir, self.item_dir_name(row), 'meta.json')
+      yield { 'row': row, 'path': path, 'content': read_text(path) }
 
   def fetch_tables_json(self):
     raise NotImplementedError()
