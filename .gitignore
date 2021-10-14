@@ -1,4 +1,6 @@
 __pycache__/
+llama_cli.egg-info/
+dist/
 .llama
 .tokens
 *-tables.json
