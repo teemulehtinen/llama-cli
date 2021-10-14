@@ -15,7 +15,7 @@ class AplusApi(AbstractDjangoApi):
   PENALTY_KEY = 'Penalty'
   PSEUDO_USER_KEY = 'UserID'
   PSEUDO_ITEM_KEY = 'SubmissionID'
-  REMOVE_KEYS = [PSEUDO_USER_KEY, STATUS_KEY, PENALTY_KEY, 'ExerciseID', 'Category', 'Exercise', 'Graded', 'GraderEmail', 'Notified', 'NSeen', '__grader_lang']
+  REMOVE_KEYS = [PSEUDO_USER_KEY, STATUS_KEY, PENALTY_KEY, 'ExerciseID', 'Category', 'Exercise', 'Graded', 'GraderEmail', 'Notified', 'NSeen', '_aplus_group', '__grader_lang']
   REMOVE_PERSONAL_KEYS = ['StudentID', 'Email']
   REMOVE_AT_EXPORT = [PSEUDO_ITEM_KEY] + REMOVE_PERSONAL_KEYS
   META_KEYS = ['exercise', 'submission_time', 'grading_time', 'grade', 'late_penalty_applied', 'feedback', 'grading_data']
@@ -61,7 +61,7 @@ class AplusApi(AbstractDjangoApi):
         tables.append(entry)
     return tables
 
-  def fetch_rows_csv(self, table, old_rows, include_personal, persons, columns_rm):
+  def fetch_rows_csv(self, table, old_rows, include_personal, select_persons, exclude_columns):
 
     # NOTE: A-plus does not offer filtering by time or id to extend previously fetched rows
     if not old_rows is None:
@@ -76,8 +76,8 @@ class AplusApi(AbstractDjangoApi):
       data = data[data[self.STATUS_KEY] == 'ready']
 
     # Filter rows by persons
-    if not persons is None:
-      data = data[data[self.PSEUDO_PERSON_KEY] in persons]
+    if not select_persons is None:
+      data = data[data[self.PSEUDO_USER_KEY].isin(select_persons)]
 
     # Cancel late penalties to keep all grades comparable
     def cancel_apply(row):
@@ -94,8 +94,8 @@ class AplusApi(AbstractDjangoApi):
     rm_cols = self.REMOVE_KEYS
     if not include_personal:
       rm_cols.extend(self.REMOVE_PERSONAL_KEYS)
-    if columns_rm:
-      rm_cols.extend(columns_rm)
+    if exclude_columns:
+      rm_cols.extend(exclude_columns)
     return data.drop(columns=[c for c in data.columns if c in rm_cols]).reset_index(drop=True)
 
   def file_columns(self, table, rows):

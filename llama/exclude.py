@@ -2,7 +2,7 @@ import re
 from .types import get_sources_with_tables
 from .list import print_sources
 from .Filters import Filters
-from .common import require, input_selection
+from .common import count, require, input_selection
 
 def parse_exclusion(pattern):
   result = re.match(r'^(-)?(\d+:)?(#?[\w ]+)?(\.[\w ]+)?(=[\w ]+)?$', pattern)
@@ -69,7 +69,7 @@ def command(args, config):
       require(0 <= exc['source'] < len(config.sources), 'Invalid source index')
     fl = Filters([exc])
     if fl.has_person_filters():
-      _, sources = fl.person_filter_columns(get_sources_with_tables(config))[0]
+      _, sources = next(fl.person_filter_columns(get_sources_with_tables(config)))
       print_sources(sources)
       if exc['reverse']:
         print(f'*** users not having "{exc["value"]}" in each of the above columns')
@@ -88,7 +88,7 @@ def status(config):
   persons = Filters.person_status()
   if persons:
     total = len(persons)
-    included = len(p for p in persons if p['included'])
+    included = count(p for p in persons if p['included'])
     percent = round(100 * included / total)
     lines.append(f'{included}/{total} ({percent}%) persons included')
   return '\n'.join(lines) if lines else None

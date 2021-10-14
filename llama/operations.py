@@ -10,5 +10,5 @@ def filter_to_last_by_person(rows):
 
 def person_has_columns_value(rows, columns, value, reverse=False):
   for _, row in filter_to_last_by_person(rows).iterrows():
-    has_value = all(row[c] == value for c in columns)
+    has_value = all(row[c['key']] == value for c in columns)
     yield row[PERSON_KEY], not has_value if reverse else has_value

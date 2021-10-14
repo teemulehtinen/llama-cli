@@ -25,7 +25,8 @@ def command(args, config):
     persons = fl.person_select(sources, config.privacy == 'none') if fl.has_person_filters() else None
     for s in fl.filter(sources):
       for t in s['tables']:
-        s['api'].fetch_rows(t, config.privacy == 'none', False, persons, t['columns'])
+        columns_rm = [c['key'] for c in t['columns_rm']] if 'columns_rm' in t else None
+        s['api'].fetch_rows(t, config.privacy == 'none', False, persons, columns_rm)
   elif args == ['files']:
     for source, table, rows in get_filtered_table_rows(config):
       for r in source['api'].fetch_files(table, rows, config.privacy == 'none'):

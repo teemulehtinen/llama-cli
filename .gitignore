@@ -4,5 +4,6 @@ dist/
 .llama
 .tokens
 *-tables.json
+person-select.json
 fetched/
 export/

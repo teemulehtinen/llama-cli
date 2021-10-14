@@ -114,7 +114,7 @@ class AbstractApi:
   def fetch_tables_json(self):
     raise NotImplementedError()
 
-  def fetch_rows_csv(self, table, old_rows, include_personal, persons):
+  def fetch_rows_csv(self, table, old_rows, include_personal, select_persons, exclude_columns):
     # Should optimize the queries to extend previous data, if possible.
     raise NotImplementedError()
   

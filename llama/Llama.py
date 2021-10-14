@@ -1,4 +1,5 @@
 from .types import get_sources_with_tables
+from .common import count
 
 class Llama:
 
@@ -27,7 +28,7 @@ class Llama:
       rows = s['api'].get_export_rows(t)
       if not rows is None:
         if files:
-          if len(list(s['api'].file_columns(t, rows))) > 0:
+          if count(s['api'].file_columns(t, rows)) > 0:
             yield s, t, rows
         else:
           yield s, t, rows

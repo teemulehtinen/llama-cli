@@ -46,10 +46,10 @@ class Filters:
       for s in sources:
         for t in s['tables']:
           rows, _ = s['api'].fetch_rows(t, include_personal)
-          for p, m in person_has_columns_value(rows, t['columns'], f['value'], f['reverse']):
+          for p, m in person_has_columns_value(rows, t['columns'], f['value'], not f['reverse']):
             persons[p] = persons.get(p, True) and m
-    write_json(self.PERSON_SELECT_JSON, [{ 'person': p, 'included': m } for p, m in persons])
-    return [p for p, m in persons if m]
+    write_json(self.PERSON_SELECT_JSON, [{ 'person': p, 'included': m } for p, m in persons.items()])
+    return [p for p, m in persons.items() if m]
   
   def filter(self, sources):
     out = sources
@@ -77,7 +77,7 @@ class Filters:
         for t in s['tables']:
           if cls._match_table(filter, t):
             columns_selected = [c for c in t['columns'] if cls._match_column(filter, c)]
-            columns_removed = [c for c in t['columns'] if not t in columns_selected]
+            columns_removed = [c for c in t['columns'] if not c in columns_selected]
             if len(columns_selected) > 0:
               tables_selected.append({ **t, 'columns': columns_selected, 'columns_rm': columns_removed })
         if len(tables_selected) > 0:
@@ -93,11 +93,11 @@ class Filters:
       else:
         tables_selected = []
         for t in s['tables']:
-          if not cls._match_table(filter, s):
+          if not cls._match_table(filter, t):
             tables_selected.append(t)
           else:
             columns_selected = [c for c in t['columns'] if not cls._match_column(filter, c)]
-            columns_removed = [c for c in t['columns'] if not t in columns_selected]
+            columns_removed = [c for c in t['columns'] if not c in columns_selected]
             if len(columns_selected) > 0:
               tables_selected.append({ **t, 'columns': columns_selected, 'columns_rm': columns_removed })
         if len(tables_selected) > 0:
@@ -118,4 +118,4 @@ class Filters:
 
   @staticmethod
   def _match_column(filter, column):
-    return filter['column'] is None or filter['column'] in column['name']
+    return filter['column'] is None or filter['column'] in column['key']
