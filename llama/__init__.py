@@ -1,3 +1,4 @@
+import sys
 from .common import find, require
 from .config import Config
 from .Llama import Llama
@@ -71,3 +72,12 @@ def llama_cli(cmd, args):
     require(config.sources, 'First, use command \'source\' to configure a data source')
   require(definition.get('call', None), 'FATAL: command missing implementation', 1)
   definition['call'](args, config)
+
+def main():
+  if len(sys.argv) < 2:
+    print('Llama CLI fetches and preprocesses learning data\n')
+    print('usage: llama <cmd> [<args>]\n')
+    for c in COMMANDS:
+      print(f'   {c["cmd"]: <12}{c["desc"]}')
+    sys.exit(0)
+  llama_cli(sys.argv[1], sys.argv[2:])

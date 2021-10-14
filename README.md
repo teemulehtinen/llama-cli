@@ -25,26 +25,39 @@ and that stands for Learning Analytics which is a research field in education
 technologies. Llamas are also known from a controversial programming exercise for
 computer science majors at Aalto University.
 
+## Installation
+
+Llama CLI is available at PyPI. It has a number of automatically installed
+dependencies, most notably `pandas`, `numpy`, and `requests`.
+
+   % python3 -m pip install llama-cli
+   % llama
+
+OR contained in a virtual environment (directory)
+
+   % python3 -m venv .venv && .venv/bin/pip install llama-cli
+   % .venv/bin/llama
+
 ## Instructions
 
-Llama CLI operates on the current work directory. The configurations and data will
-be stored in that directory – little bit like when working with git repositories.
+Llama CLI operates on the current working directory. The configurations and data
+will be stored in that directory – little bit like when working with git repositories.
 One work directory can connect with multiple data sources and one should select
 the sources that the current research or analysis project requires.
 
-     % llama
-    Llama CLI fetches and preprocesses learning data
+    % llama
+   Llama CLI fetches and preprocesses learning data
 
-    usage: llama <cmd> [<args>]
+   usage: llama <cmd> [<args>]
 
-       status      Show the working tree status
-       source      Manage sources for learning data
-       list        List available data tables and columns
-       privacy     Configure privacy (default: pseudoanonymous)
-       exclude     Exclude selected tables, columns, or persons at fetch
-       fetch       Fetch data from sources
-       anonymize   Export anonymized data
-       shell       Open python REPL with 'llama' instance to fetched data
+      status      Show the working tree status
+      source      Manage sources for learning data
+      list        List available data tables and columns
+      privacy     Configure privacy (default: pseudoanonymous)
+      exclude     Exclude selected tables, columns, or persons at fetch
+      fetch       Fetch data from sources
+      anonymize   Export anonymized data
+      shell       Open python REPL with 'llama' instance to fetched data
 
 1. Use `llama source add` to interactively connect with data sources.
    The required addresses and keys will be prompted when required.

@@ -1,11 +1,4 @@
-import sys
-from . import COMMANDS, llama_cli
+from . import main
 
-if len(sys.argv) < 2:
-  print('Llama CLI fetches and preprocesses learning data\n')
-  print('usage: llama <cmd> [<args>]\n')
-  for c in COMMANDS:
-    print(f'   {c["cmd"]: <12}{c["desc"]}')
-  sys.exit(0)
-
-llama_cli(sys.argv[1], sys.argv[2:])
+if __name__ == '__main__':
+  main()
