@@ -87,7 +87,7 @@ of the exported data. Exports can be opened both in an interactive test via
 `llama shell` or using following constructor in a program or e.g. Jupyter notebook.
 
       from llama import LlamaApi, LlamaStats
-      llama = LlamaApi(False, 'export')
+      llama = LlamaApi('export')
 
 API documentation:
 
