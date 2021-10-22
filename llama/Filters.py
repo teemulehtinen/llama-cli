@@ -1,5 +1,5 @@
-from .common.files import read_json, write_json
 from .operations import person_has_columns_value
+from .common import count, read_json, write_json
 
 class Filters:
   
@@ -60,12 +60,25 @@ class Filters:
     return out
 
   @classmethod
-  def person_status(cls):
+  def _person_json(cls):
     return read_json(cls.PERSON_SELECT_JSON)
-  
+
+  @classmethod
+  def person_status(cls):
+    persons = cls._person_json()
+    if persons:
+      total = len(persons)
+      included = count(p for p in persons if p['included'])
+      return {
+        'total': total,
+        'included': included,
+        'percent': round(100 * included / total),
+      }
+    return None
+
   @classmethod
   def person_included(cls):
-    status = cls.person_status()
+    status = cls._person_json()
     return [p['person'] for p in status if p['included']] if status else None
 
   @classmethod

@@ -85,10 +85,7 @@ def status(config):
   lines = []
   if config.exclude:
     lines.append(' '.join(['Exclude:'] + [format_exclusion(e) for e in config.exclude]))
-  persons = Filters.person_status()
-  if persons:
-    total = len(persons)
-    included = count(p for p in persons if p['included'])
-    percent = round(100 * included / total)
-    lines.append(f'{included}/{total} ({percent}%) persons included')
+    ps = Filters.person_status()
+    if ps:
+      lines.append(f'{ps["included"]}/{ps["total"]} ({ps["percent"]}%) persons included')
   return '\n'.join(lines) if lines else None

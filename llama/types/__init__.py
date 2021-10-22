@@ -13,14 +13,14 @@ TYPES = [
 def interactive_add(type):
   return type['add']()
 
-def select_type(id):
+def select_type(type):
   for t in TYPES:
-    if t['id'] == id:
+    if t['id'] == type:
       return t
   return None
 
 def create_client(src):
-  t = select_type(src["id"])
+  t = select_type(src['type'])
   if t:
     return t['construct'](src)
   return None
@@ -36,7 +36,9 @@ def get_sources_with_tables(config):
     sources.append({
       'id': i,
       'name': src['name'],
-      'api': api,
+      'type': src['type'],
+      'index': api.table_list_json_name(),
       'tables': tables,
+      'api': api,
     })
   return sources

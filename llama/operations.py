@@ -1,4 +1,4 @@
-from .config import TIME_KEY, PERSON_KEY
+from .Config import TIME_KEY, PERSON_KEY
 
 def last_time(rows):
   return rows[TIME_KEY].max()

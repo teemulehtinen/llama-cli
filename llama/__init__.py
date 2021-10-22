@@ -1,6 +1,6 @@
 import sys
 from .common import find, require
-from .config import Config
+from .Config import Config
 from .Llama import Llama
 from . import status
 from . import sources
@@ -9,8 +9,6 @@ from . import privacy
 from . import exclude
 from . import fetch
 from . import anonymize
-
-VERSION = '1.0.0'
 
 COMMANDS = [
   {
@@ -64,7 +62,7 @@ COMMANDS = [
 def llama_cli(cmd, args):
   definition = find(COMMANDS, lambda c: c['cmd'] == cmd)
   require(definition, 'Unknown command')
-  config = Config(VERSION)
+  config = Config()
   requirements = definition.get('require', [])
   if 'config' in requirements:
     require(config.exists, 'The working directory has no configuration (.llama)')

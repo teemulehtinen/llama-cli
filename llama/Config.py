@@ -2,19 +2,22 @@ import os.path
 import uuid
 from .common import read_json, write_json
 
+VERSION = '1.0.0'
 CONFIG_FILE = '.llama'
 TOKENS_FILE = '.tokens'
 STORAGE_DIR = 'fetched'
 EXPORT_DIR = 'export'
+EXPORT_INDEX_JSON = 'index.json'
 
 TIME_KEY = 'Time'
 PERSON_KEY = 'Person'
+GRADE_KEY = 'Grade'
 
 class Config:
 
-  def __init__(self, version):
+  def __init__(self):
     self.data = {
-      'llama': version,
+      'llama': VERSION,
       'sources': [],
       'privacy': 'pseudo',
       'exclude': [],
@@ -25,6 +28,12 @@ class Config:
 
   def load(self):
     self.data = self.join_tokens(read_json(CONFIG_FILE) or {}, read_json(TOKENS_FILE) or {})
+    
+    # Backwards compatibility
+    for src in self.data['sources']:
+      if not 'type' in src and 'id' in src:
+        src['type'] = src['id']
+        del src['id']
 
   def write(self):
     data, tokens = self.split_tokens(self.data)

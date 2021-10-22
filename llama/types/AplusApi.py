@@ -1,5 +1,5 @@
 import re
-from ..config import PERSON_KEY
+from ..Config import PERSON_KEY, GRADE_KEY
 from .AbstractDjangoApi import AbstractDjangoApi
 
 class AplusApi(AbstractDjangoApi):
@@ -11,11 +11,10 @@ class AplusApi(AbstractDjangoApi):
   SUBMISSION_DETAILS = '{url}submissions/{submission_id:d}'
 
   STATUS_KEY = 'Status'
-  GRADE_KEY = 'Grade'
   PENALTY_KEY = 'Penalty'
   PSEUDO_USER_KEY = 'UserID'
   PSEUDO_ITEM_KEY = 'SubmissionID'
-  REMOVE_KEYS = [PSEUDO_USER_KEY, STATUS_KEY, PENALTY_KEY, 'ExerciseID', 'Category', 'Exercise', 'Graded', 'GraderEmail', 'Notified', 'NSeen', '_aplus_group', '__grader_lang']
+  REMOVE_KEYS = [PSEUDO_USER_KEY, STATUS_KEY, 'ExerciseID', 'Category', 'Exercise', 'Graded', 'GraderEmail', 'Notified', 'NSeen', '_aplus_group', '__grader_lang']
   REMOVE_PERSONAL_KEYS = ['StudentID', 'Email']
   REMOVE_AT_EXPORT = [PSEUDO_ITEM_KEY] + REMOVE_PERSONAL_KEYS
   META_KEYS = ['exercise', 'submission_time', 'grading_time', 'grade', 'late_penalty_applied', 'feedback', 'grading_data']
@@ -82,12 +81,14 @@ class AplusApi(AbstractDjangoApi):
     # Cancel late penalties to keep all grades comparable
     def cancel_apply(row):
       if row[self.PENALTY_KEY] > 0:
-        row[self.GRADE_KEY] /= row[self.PENALTY_KEY]
+        row[GRADE_KEY] /= row[self.PENALTY_KEY]
       return row
     if self.PENALTY_KEY in data:
       data = data.apply(cancel_apply, 1)
 
-    # Use default column keys, TIME_KEY matches
+    # Use default column keys:
+    # TIME_KEY matches
+    # GRADE_KEY matches
     data[PERSON_KEY] = data[self.PSEUDO_USER_KEY]
 
     # Filter extra columns

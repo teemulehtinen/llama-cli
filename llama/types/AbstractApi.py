@@ -5,7 +5,7 @@ import json
 import requests
 import pandas
 from ..common import read_json, write_json, read_csv, write_csv, read_text, write_text
-from ..config import PERSON_KEY, STORAGE_DIR, EXPORT_DIR, TIME_KEY
+from ..Config import PERSON_KEY, STORAGE_DIR, EXPORT_DIR, TIME_KEY
 
 class AbstractApi:
 
@@ -43,7 +43,8 @@ class AbstractApi:
           self.fetch_delay()
     else:
       self.fetch_delay()
-    rows[TIME_KEY] = pandas.to_datetime(rows[TIME_KEY])
+    if not rows is None and TIME_KEY in rows:
+      rows[TIME_KEY] = pandas.to_datetime(rows[TIME_KEY])
     return rows, cached
 
   def fetch_files(self, table, rows, include_personal=False, only_cache=False):
@@ -115,6 +116,7 @@ class AbstractApi:
     raise NotImplementedError()
 
   def fetch_rows_csv(self, table, old_rows, include_personal, select_persons, exclude_columns):
+    # MUST use default keys: TIME_KEY, PERSON_KEY, GRADE_KEY
     # Should optimize the queries to extend previous data, if possible.
     raise NotImplementedError()
   

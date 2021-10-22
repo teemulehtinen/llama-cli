@@ -1,6 +1,5 @@
 from .types import get_sources_with_tables
 from .Filters import Filters
-from .common import write_json
 
 def get_filtered_table_rows(config):
   fl = Filters(config.exclude)

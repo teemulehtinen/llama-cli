@@ -1,8 +1,8 @@
+from .types import enumerate_sources
+from .Llama import Llama
+from .common import require
 from . import exclude
 from . import privacy
-from .types import enumerate_sources
-from .common import require
-from .Llama import Llama
 
 def status_sources(config):
   if not config.sources:
@@ -10,7 +10,7 @@ def status_sources(config):
   lines = []
   for i, src, api in enumerate_sources(config):
     tables, cached = api.list_tables(only_cache=True)
-    lines.append(f'{i:d}: {src["name"]} [{src["id"]}]')
+    lines.append(f'{i:d}: {src["name"]} [{src["type"]}]')
     if cached:
       lines.append(f'   {len(tables)} tables')
     else:
