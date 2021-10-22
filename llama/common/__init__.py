@@ -16,3 +16,10 @@ def find(items, condition):
 
 def count(iterator):
   return sum(1 for a in iterator)
+
+def as_list(param):
+  if type(param) == list:
+    return param
+  if type(param) == tuple:
+    return list(param)
+  return [param]

@@ -86,15 +86,19 @@ the package also offers a Python interface for programmatic accessors and sample
 of the exported data. Exports can be opened both in an interactive test via
 `llama shell` or using following constructor in a program or e.g. Jupyter notebook.
 
-      from llama import LlamaApi
-      llama = LlamaApi('export')
+      from llama import LlamaApi, LlamaStats
+      llama = LlamaApi(False, 'export')
 
 API documentation:
+
+> This README documents the `LlamaApi` that in addition to selecting data,
+> offers quick output from statistical methods in `LlamaStats`. When the return
+> values are needed for further processing, the `LlamaStats` must be used directly.
 
 ### `llama = LlamaApi(*directories)`
 
 Constructs a standard interface to work with one or multiple Llama export directories.
-If no parameters are given the constructor seeks `./export` directory.
+If no directory parameters are given the constructor seeks `./export` directory.
 
 * `*directories: str` (optional 0-N paramaters) Llama export directory paths
 * **Returns** an instance of `LlamaApi`
@@ -109,53 +113,22 @@ the optional select dictionary.
     OR list of indexes
   * `table: str OR str[]` (optional) table id prefixed with `#` (e.g. #1032)
     OR text to math against table name OR list of the previous
-  * `files: bool` (optional) True to include only tables that link to files
-    (e.g. submitted code) OR False to include only tables that do not link to files
-* **Returns** list of `ids_and_names: dict[]`
-
-The following methods all take an optional `select: dict` (identical with the
-`llama.list` method) to access a subset of data and combine the reading of data
-with further processing of it. The distinct processing methods can be found
-separately from `LlamaStats`. They take outputs from other methods as parameters
-(such as table rows from `llama.get`). A program that does multiple processing
-tasks performs better when separately reading data, while the `llama.*`
-convenience methods require less typing for quick results.
 
 ### `llama.get(select)`
 
-Reads and iterates over data form tables.
+Reads and iterates over data form tables. This method can be combined with
+many methods from `LlamaStats`.
 
 * `select: dict` (optional) see `llama.list`
-* **Returns** iterator over tuples of form
+* **Returns** `iterator` over `tuples` of
   `(source: dict, table: dict, rows: pandas.DataFrame)`
-
-### `llama.exercise_series(select)`
-
-Creates data series of interest for each selected table
-(that are presumed to represent exercise submissions).
-
-* `select: dict` (optional) see `llama.list`
-* **Returns** iterator over `measures: dict` with keys
-  * `best_grade: pandas.Series`
-  * `first_grade: pandas.Series`
-  * `every_grading: pandas.Series`
-  * `attempts: pandas.Series`
-  * `start_to_end_minutes: pandas.Series`
-  * `grade_changes: pandas.Series`
-  * `first_revision_minutes: pandas.Series`
-  * `first_revision_grades: pandas.Series`
-  * `second_revision_minutes: pandas.Series`
-  * `second_revision_grades: pandas.Series`
-  * `third_revision_minutes: pandas.Series`
-  * `third_revision_grades: pandas.Series`
 
 ### `llama.execise_description(select)`
 
-Calculates statistical measures of the exercise data series for each selected table.
+Calculates statistical measures of many interesting exercise data series
+(series from `LlamaStats.exercise_series`).
 
 * `select: dict` (optional) see `llama.list`
-* **Returns** iterator over `pandas.DataFrame` that include statistical description
-  for exercise data series (from `llama.exercise_series`)
 
 ### `llama.exercise_pdf(pdf_name, select)`
 
@@ -163,4 +136,4 @@ Plots pdf visualization of the exercise data series for each selected table.
 
 * `pdf_name: str` (optional) default `exercises.pdf`
 * `select: dict` (optional) see `llama.list`
-* **Returns** None
+* **Returns** `None`

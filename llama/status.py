@@ -1,5 +1,4 @@
 from .types import enumerate_sources
-from .Llama import Llama
 from .common import require
 from . import exclude
 from . import privacy
@@ -31,10 +30,3 @@ def status(config):
 def command(args, config):
   require(args == [], 'Unknown command')
   print(status(config))
-
-def shell(args, config):
-  require(args == [], 'Unknown command')
-  import code
-  code.interact('Use "llama" to access data', local={
-    'llama': Llama(config),
-  })

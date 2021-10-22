@@ -9,6 +9,7 @@ STORAGE_DIR = 'fetched'
 EXPORT_DIR = 'export'
 EXPORT_INDEX_JSON = 'index.json'
 
+# These keys should be in the data tables (if appropriate)
 TIME_KEY = 'Time'
 PERSON_KEY = 'Person'
 GRADE_KEY = 'Grade'

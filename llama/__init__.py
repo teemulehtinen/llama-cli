@@ -1,7 +1,6 @@
 import sys
 from .common import find, require
 from .Config import Config
-from .Llama import Llama
 from . import status
 from . import sources
 from . import list
@@ -9,6 +8,9 @@ from . import privacy
 from . import exclude
 from . import fetch
 from . import anonymize
+from . import shell
+from .LlamaApi import LlamaApi
+from .LlamaStats import LlamaStats
 
 COMMANDS = [
   {
@@ -53,9 +55,8 @@ COMMANDS = [
   },
   {
     'cmd': 'shell',
-    'desc': 'Open python REPL with \'llama\' instance to fetched data',
-    'require': ['config', 'source'],
-    'call': status.shell,
+    'desc': 'Open python REPL with \'llama\' instance to export data',
+    'call': shell.command,
   }
 ]
 

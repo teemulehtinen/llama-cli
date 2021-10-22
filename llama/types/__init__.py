@@ -37,7 +37,6 @@ def get_sources_with_tables(config):
       'id': i,
       'name': src['name'],
       'type': src['type'],
-      'index': api.table_list_json_name(),
       'tables': tables,
       'api': api,
     })

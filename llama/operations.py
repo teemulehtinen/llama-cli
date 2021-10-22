@@ -1,4 +1,9 @@
+import pandas
 from .Config import TIME_KEY, PERSON_KEY
+
+def parse_timecolumn(rows):
+  if not rows is None and TIME_KEY in rows:
+    rows[TIME_KEY] = pandas.to_datetime(rows[TIME_KEY])
 
 def last_time(rows):
   return rows[TIME_KEY].max()

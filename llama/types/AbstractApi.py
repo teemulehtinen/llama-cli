@@ -4,8 +4,9 @@ import io
 import json
 import requests
 import pandas
+from ..Config import STORAGE_DIR, TIME_KEY, PERSON_KEY
+from ..operations import parse_timecolumn
 from ..common import read_json, write_json, read_csv, write_csv, read_text, write_text
-from ..Config import PERSON_KEY, STORAGE_DIR, EXPORT_DIR, TIME_KEY
 
 class AbstractApi:
 
@@ -13,6 +14,7 @@ class AbstractApi:
   TABLE_CSV = '{source_id}-{table_id}-rows.csv'
   TABLE_DIR = '{source_id}-{table_id}'
   ITEM_DIR = '{user_id}-{time}'
+  META_JSON = 'meta.json'
 
   REQUEST_DELAY = 1 #sec
 
@@ -43,8 +45,7 @@ class AbstractApi:
           self.fetch_delay()
     else:
       self.fetch_delay()
-    if not rows is None and TIME_KEY in rows:
-      rows[TIME_KEY] = pandas.to_datetime(rows[TIME_KEY])
+    parse_timecolumn(rows)
     return rows, cached
 
   def fetch_files(self, table, rows, include_personal=False, only_cache=False):
@@ -69,7 +70,7 @@ class AbstractApi:
     table_dir = self.table_dir_name(table['id'])
     for _, row in rows.iterrows():
       item_dir = self.item_dir_name(row)
-      path = (STORAGE_DIR, table_dir, item_dir, 'meta.json')
+      path = (STORAGE_DIR, table_dir, item_dir, self.META_JSON)
       content, cached = self.cached_json_or_fetch(
         lambda: self.fetch_meta_json(table, row, include_personal),
         path,
@@ -80,7 +81,7 @@ class AbstractApi:
         self.fetch_delay()
       yield { 'row': row, 'path': path, 'content': content, 'cached': cached }
 
-  def write_export(self, table, rows, person_map):
+  def export_rows(self, table, rows, person_map, metas=False):
     data = self.drop_for_export(table, rows)
     data[PERSON_KEY] = data[PERSON_KEY].map(person_map)
     data = data.dropna(subset=[PERSON_KEY]).reset_index(drop=True)
@@ -92,31 +93,18 @@ class AbstractApi:
         row[c] = os.path.join(table_dir, item_dir, c)
       return row
     data = data.apply(rewrite_files, 1)
-    write_csv(self.table_csv_name(table['id'], export=True), data)
-  
-  def get_export_rows(self, table):
-    return read_csv(self.table_csv_name(table['id'], export=True))
-
-  def get_export_files(self, table, rows):
-    file_cols = self.file_columns(table, rows)
-    table_dir = self.table_dir_name(table['id'])
-    for _, row in rows.iterrows():
-      item_dir = self.item_dir_name(row)
-      for c in file_cols:
-        path = (EXPORT_DIR, table_dir, item_dir, c)
-        yield { 'row': row, 'col': c, 'path': path, 'content': read_json(path) }
-
-  def get_export_meta(self, table, rows):
-    table_dir = self.table_dir_name(table['id'])
-    for _, row in rows.iterrows():
-      path = (EXPORT_DIR, table_dir, self.item_dir_name(row), 'meta.json')
-      yield { 'row': row, 'path': path, 'content': read_text(path) }
+    if metas:
+      data['RowMeta'] = [
+        os.path.join(table_dir, self.item_dir_name(row), self.META_JSON)
+        for _, row in data.iterrows()
+      ]
+    return data
 
   def fetch_tables_json(self):
     raise NotImplementedError()
 
   def fetch_rows_csv(self, table, old_rows, include_personal, select_persons, exclude_columns):
-    # MUST use default keys: TIME_KEY, PERSON_KEY, GRADE_KEY
+    # MUST use default keys if appropriate columns: TIME_KEY, PERSON_KEY, GRADE_KEY
     # Should optimize the queries to extend previous data, if possible.
     raise NotImplementedError()
   
@@ -137,9 +125,9 @@ class AbstractApi:
       self.TABLE_LIST_JSON.format(source_id=self.source_id),
     )
 
-  def table_csv_name(self, table_id, export=False):
+  def table_csv_name(self, table_id):
     return (
-      EXPORT_DIR if export else STORAGE_DIR,
+      STORAGE_DIR,
       self.TABLE_CSV.format(source_id=self.source_id, table_id=table_id),
     )
 
