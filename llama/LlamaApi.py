@@ -1,4 +1,4 @@
-from .Config import EXPORT_DIR, EXPORT_INDEX_JSON, TIME_KEY
+from .Config import EXPORT_DIR, EXPORT_INDEX_JSON
 from .LlamaStats import LlamaStats
 from .operations import parse_timecolumn
 from .common import require, as_list, read_json, read_csv
@@ -67,7 +67,9 @@ class LlamaApi:
       print(t['name'])
       print(descs)
 
-  def exercise_pdf(self, pdf_name=None, select=None):
-    for _, t, rows in self.get(select):
-      series = LlamaStats.exercise_series(rows)
-      LlamaStats.exercise_plot(t['name'], series)
+  def exercise_pdf(self, select=None, pdf_name=None):
+    LlamaStats.multipage_plot_or_show(
+      pdf_name,
+      self.get(select),
+      lambda r: LlamaStats.exercise_plot(r[1], LlamaStats.exercise_series(r[2]))
+    )

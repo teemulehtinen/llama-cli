@@ -126,14 +126,15 @@ many methods from `LlamaStats`.
 ### `llama.execise_description(select)`
 
 Calculates statistical measures of many interesting exercise data series
-(series from `LlamaStats.exercise_series`).
+for each selected table (series from `LlamaStats.exercise_series`
+and descriptive measures from `LlamaStats.exercise_description`).
 
 * `select: dict` (optional) see `llama.list`
 
-### `llama.exercise_pdf(pdf_name, select)`
+### `llama.exercise_pdf(select, pdf_name)`
 
-Plots pdf visualization of the exercise data series for each selected table.
+Plots pdf visualization of the exercise data series for each selected table
+(series from `LlamaStats.exercise_series` and visualization from `LlamaStats.exercise_plot`).
 
-* `pdf_name: str` (optional) default `exercises.pdf`
 * `select: dict` (optional) see `llama.list`
-* **Returns** `None`
+* `pdf_name: str` (optional) by default try to open a window for each table
