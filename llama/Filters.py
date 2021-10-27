@@ -17,7 +17,8 @@ class Filters:
 
   PERSON_SELECT_JSON = 'person-select.json'
 
-  def __init__(self, filters=None):
+  def __init__(self, filters=None, inclusive=False):
+    self.inclusive = inclusive
     self.person_filters = []
     self.inclusions = []
     self.exclusions = []
@@ -25,9 +26,10 @@ class Filters:
 
   def add(self, filters):
     for f in filters:
-      if not f['value'] is None:
+      reverse = f.get('reverse', False)
+      if not f.get('value') is None:
         self.person_filters.append(f)
-      elif f['reverse']:
+      elif (not reverse if self.inclusive else reverse):
         self.inclusions.append(f)
       else:
         self.exclusions.append(f)
@@ -91,7 +93,7 @@ class Filters:
           if cls._match_table(filter, t):
             columns_selected = [c for c in t['columns'] if cls._match_column(filter, c)]
             columns_removed = [c for c in t['columns'] if not c in columns_selected]
-            if len(columns_selected) > 0:
+            if not 'column' in filter or len(columns_selected) > 0:
               tables_selected.append({ **t, 'columns': columns_selected, 'columns_rm': columns_removed })
         if len(tables_selected) > 0:
           sources_selected.append({ **s, 'tables': tables_selected })
@@ -119,16 +121,20 @@ class Filters:
 
   @staticmethod
   def _match_source(filter, source):
-    return filter['source'] is None or filter['source'] == source['id']
+    m = filter.get('source')
+    return m is None or m == source['id']
 
   @staticmethod
   def _match_table(filter, table):
+    m = filter.get('table')
+    by_id = filter.get('table_by_id', False)
     return (
-      filter['table'] is None
-      or (filter['table_by_id'] and filter['table'] == str(table['id']))
-      or (not filter['table_by_id'] and filter['table'] in table['name'])
+      m is None
+      or (by_id and m == str(table['id']))
+      or (not by_id and m in table['name'])
     )
 
   @staticmethod
   def _match_column(filter, column):
-    return filter['column'] is None or filter['column'] in column['key']
+    m = filter.get('column')
+    return m is None or m in column['key']

@@ -108,11 +108,11 @@ If no directory parameters are given the constructor seeks `./export` directory.
 Lists sources and tables from the data. Subset of data can be selected with
 the optional select dictionary.
 
-* `select: dict` (optional) with keys
-  * `source: int OR int[]` (optional) index of a learning data source
-    OR list of indexes
-  * `table: str OR str[]` (optional) table id prefixed with `#` (e.g. #1032)
-    OR text to math against table name OR list of the previous
+* `select: dict OR dict[]` (optional) including following keys
+  * `source: int` (optional) index of a learning data source
+  * `table: str` (optional) text to match table name (or id)
+  * `table_by_id: bool` (optional) True to match `table` with table id
+  * `reverse: bool` (optional) True to exclude matches and include rest
 
 ### `llama.get(select)`
 
