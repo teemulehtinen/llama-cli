@@ -1,6 +1,7 @@
 from .Config import EXPORT_DIR, EXPORT_INDEX_JSON
 from .LlamaStats import LlamaStats
 from .operations import parse_timecolumn
+from .plotting import multipage_plot_or_show
 from .common import require, as_list, read_json, read_csv
 
 class LlamaApi:
@@ -68,7 +69,7 @@ class LlamaApi:
       print(descs)
 
   def exercise_pdf(self, select=None, pdf_name=None):
-    LlamaStats.multipage_plot_or_show(
+    multipage_plot_or_show(
       pdf_name,
       self.get(select),
       lambda r: LlamaStats.exercise_plot(r[1], LlamaStats.exercise_series(r[2]))
