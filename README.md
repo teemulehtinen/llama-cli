@@ -99,7 +99,6 @@ API documentation:
 
 Constructs a standard interface to work with one or multiple Llama export directories.
 If no directory parameters are given the constructor seeks `./export` directory.
-
 * `*directories: str` (optional 0-N paramaters) Llama export directory paths
 * **Returns** an instance of `LlamaApi`
 
@@ -107,7 +106,6 @@ If no directory parameters are given the constructor seeks `./export` directory.
 
 Lists sources and tables from the data. Subset of data can be selected with
 the optional select dictionary.
-
 * `select: dict OR dict[]` (optional) including following keys
   * `source: int` (optional) index of a learning data source
   * `table: str` (optional) text to match table name (or id)
@@ -118,23 +116,46 @@ the optional select dictionary.
 
 Reads and iterates over data form tables. This method can be combined with
 many methods from `LlamaStats`.
-
 * `select: dict` (optional) see `llama.list`
 * **Returns** `iterator` over `tuples` of
   `(source: dict, table: dict, rows: pandas.DataFrame)`
 
+### `llama.overall_description(select)`
+
+Calculates statistical grade and attempt distributions,
+as well as weekly and daily patterns.
+* `select: dict` (optional) see `llama.list`
+
+### `llama.overall_pdf(select, pdf_name)`
+
+Renders a page about overall statistics.
+* `select: dict` (optional) see `llama.list`
+* `pdf_name: str` (optional) a file name for pdf output, else try to plot to window
+![example](img/overall.png)
+
+### `llama.learner_description(persons, select)`
+
+Calculates statistical grade and attempt distributions,
+as well as weekly and daily patterns for the learners.
+* `persons: list` (optional) a list of persons numbers to include
+* `select: dict` (optional) see `llama.list`
+
+### `llama.learner_pdf(persons, select, pdf_name)`
+
+Renders a statistic page for each learner.
+* `persons: list` (optional) a list of persons numbers to include
+* `select: dict` (optional) see `llama.list`
+* `pdf_name: str` (optional) a file name for pdf output, else try to plot to window
+![example](img/learner.png)
+
 ### `llama.execise_description(select)`
 
-Calculates statistical measures of many interesting exercise data series
-for each selected table (series from `LlamaStats.exercise_series`
-and descriptive measures from `LlamaStats.exercise_description`).
-
+Calculates statistical distributions for each selected exercise table.
 * `select: dict` (optional) see `llama.list`
 
 ### `llama.exercise_pdf(select, pdf_name)`
 
-Plots pdf visualization of the exercise data series for each selected table
-(series from `LlamaStats.exercise_series` and visualization from `LlamaStats.exercise_plot`).
-
+Renders a statistic page for each exercise.
 * `select: dict` (optional) see `llama.list`
-* `pdf_name: str` (optional) by default try to open a window for each table
+* `pdf_name: str` (optional) a file name for pdf output, else try to plot to window
+![example](img/exercise.png)

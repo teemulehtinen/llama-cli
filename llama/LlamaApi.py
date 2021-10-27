@@ -44,11 +44,36 @@ class LlamaApi:
         parse_timecolumn(rows)
         yield s, t, rows
 
+  def overall_description(self, select=None):
+    series = LlamaStats.overall_series(self.get(select))
+    print(LlamaStats.description(series))
+    print(series['_weekday'], series['_weekcount'])
+
+  def overall_pdf(self, select=None, pdf_name=None):
+    multipage_plot_or_show(
+      pdf_name,
+      [LlamaStats.overall_series(self.get(select))],
+      lambda r: LlamaStats.overall_plot(r)
+    )
+
+  def learner_description(self, persons=None, select=None):
+    for series in LlamaStats.learner_series(self.get(select), persons):
+      print(series['_person'])
+      print(LlamaStats.description(series))
+      print(series['_weekday'], series['_weekcount'])
+
+  def learner_pdf(self, persons=None, select=None, pdf_name=None):
+    multipage_plot_or_show(
+      pdf_name,
+      LlamaStats.learner_series(self.get(select), persons),
+      lambda r: LlamaStats.learner_plot(r)
+    )
+
   def exercise_description(self, select=None):
     for _, t, rows in self.get(select):
-      descs = LlamaStats.exercise_description(LlamaStats.exercise_series(rows))
+      series = LlamaStats.exercise_series(rows)
       print(t['name'])
-      print(descs)
+      print(LlamaStats.description(series))
 
   def exercise_pdf(self, select=None, pdf_name=None):
     multipage_plot_or_show(
