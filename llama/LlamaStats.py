@@ -88,9 +88,10 @@ class LlamaStats:
   def learner_series(table_iterator, include_persons=None):
     count = 0
     learners = {}
-    KEEP_KEYS = [GRADE_KEY, WEEKDAY_KEY, WEEKNUMBER_KEY, EXERCISE_KEY, GRADERATIO_KEY]
+    KEEP_KEYS = [GRADE_KEY, TIME_KEY, WEEKNUMBER_KEY, WEEKDAY_KEY, HOUR_KEY, EXERCISE_KEY, GRADERATIO_KEY]
     for _, table, rows in table_iterator:
       append_discrete_time_columns(rows)
+      rows[TIME_KEY] = as_minute_scalar(rows[TIME_KEY])
       rows[EXERCISE_KEY] = [count for i in range(rows.shape[0])]
       mp = table['max_points'] if 'max_points' in table else numpy.max(rows[GRADE_KEY])
       rows[GRADERATIO_KEY] = rows[GRADE_KEY] / mp
@@ -109,28 +110,38 @@ class LlamaStats:
       w_attempts = rows.groupby(WEEKNUMBER_KEY).size().to_frame(ATTEMPT_KEY)
       wd_grades = df_index_sums(maxgrades, byexercise[WEEKDAY_KEY].median().astype('int'))
       wd_attempts = rows.groupby(WEEKDAY_KEY).size().to_frame(ATTEMPT_KEY)
+      h_grades = df_index_sums(maxgrades, byexercise[HOUR_KEY].median().astype('int'))
+      h_attempts = rows.groupby(HOUR_KEY).size().to_frame(ATTEMPT_KEY)
       return {
         '_person': person,
         'exercise_grades': maxgrades,
-        'exercise_grade_ratios': byexercise[GRADERATIO_KEY].max(),
         'exercise_attempts': byexercise.size(),
         '_weekcount': df_adjust_index_to_zero(w_grades.join(w_attempts)),
         '_weekday': df_complete_n_index(wd_grades.join(wd_attempts), 7),
+        '_hour': df_complete_n_index(h_grades.join(h_attempts), 24),
+        'exercise_grade_ratios': byexercise[GRADERATIO_KEY].max(),
+        'end_minutes': times_until_end(byexercise),
+        'first_minutes': times_until_rev(byexercise, 1),
       }
     return [person_dict(person, rows) for person, rows in learners.items()]
 
   @staticmethod
   def learner_plot(leseries):
-    _, ax = pyplot.subplots(4, 2, figsize=(7, 10), gridspec_kw={ 'hspace': 0.4, 'wspace': 0.3 })
+    _, ax = pyplot.subplots(4, 3, figsize=(7, 10), gridspec_kw={ 'hspace': 0.4, 'wspace': 0.3 })
     pyplot.suptitle(f'Learner #{int(leseries["_person"])}')
-    nice_hist(ax[0, 0], 'Grades', leseries['exercise_grade_ratios'])
-    nice_hist(ax[0, 1], 'Attempts', leseries['exercise_attempts'])
-    nice_bars(ax[1, 0], 'Grade/Exercise', leseries['exercise_grades'])
-    nice_bars(ax[1, 1], 'Attempts/Exercise', leseries['exercise_attempts'])
-    nice_bars(ax[2, 0], 'Grade/Week', leseries['_weekcount'][GRADE_KEY])
-    nice_bars(ax[2, 1], 'Attempts/Week', leseries['_weekcount'][ATTEMPT_KEY])
-    nice_bars(ax[3, 0], 'Grade/Weekday', leseries['_weekday'][GRADE_KEY], WDAYS)
-    nice_bars(ax[3, 1], 'Attempts/Weekday', leseries['_weekday'][ATTEMPT_KEY], WDAYS)
+    nice_hist(ax[0, 0], 'Exercise grades', leseries['exercise_grade_ratios'])
+    nice_hist(ax[0, 1], 'Exercise attempts', leseries['exercise_attempts'])
+    nice_bars(ax[0, 2], 'Grade/Exercise', leseries['exercise_grades'])
+    nice_bars(ax[1, 0], 'Grade/Week', leseries['_weekcount'][GRADE_KEY])
+    nice_bars(ax[1, 1], 'Attempts/Week', leseries['_weekcount'][ATTEMPT_KEY])
+    nice_bars(ax[1, 2], 'Attempts/Exercise', leseries['exercise_attempts'])
+    minute_bins = limited_minute_bins(leseries['end_minutes'])
+    nice_bars(ax[2, 0], 'Grade/Weekday', leseries['_weekday'][GRADE_KEY], WDAYS)
+    nice_bars(ax[2, 1], 'Attempts/Weekday', leseries['_weekday'][ATTEMPT_KEY], WDAYS)
+    nice_hist(ax[2, 2], '1st revision minutes', leseries['first_minutes'], minute_bins)
+    nice_bars(ax[3, 0], 'Grade/Hour', leseries['_hour'][GRADE_KEY])
+    nice_bars(ax[3, 1], 'Attempts/Hour', leseries['_hour'][ATTEMPT_KEY])
+    nice_hist(ax[3, 2], 'Exercise end minutes', leseries['end_minutes'], minute_bins)
 
   @staticmethod
   def exercise_series(rows, rev_n=2):
