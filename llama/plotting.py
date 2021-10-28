@@ -18,7 +18,7 @@ def nice_bins(min, max, steps=10):
   s = (max - min) / steps
   return numpy.arange(min, max + 2 * s, s)
 
-def limited_minute_bins(series, quantile=0.7, min=10):
+def limited_minute_bins(series, quantile=0.6, min=10):
   return nice_bins(0, max(numpy.quantile(series, quantile), min))
 
 def nice_formatter(x, pos):
