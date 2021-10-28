@@ -1,6 +1,10 @@
 import pandas
 from .Config import TIME_KEY, PERSON_KEY
 
+WEEKDAY_KEY = 'Weekday'
+WEEKNUMBER_KEY = 'Weeknumber'
+HOUR_KEY = 'Hour'
+
 def parse_timecolumn(rows):
   if not rows is None and TIME_KEY in rows:
     rows[TIME_KEY] = pandas.to_datetime(rows[TIME_KEY])
@@ -17,3 +21,8 @@ def person_has_columns_value(rows, columns, value, reverse=False):
   for _, row in filter_to_last_by_person(rows).iterrows():
     has_value = all(row[c['key']] == value for c in columns)
     yield row[PERSON_KEY], not has_value if reverse else has_value
+
+def df_append_discrete_time_columns(df):
+  df[WEEKDAY_KEY] = df[TIME_KEY].dt.dayofweek
+  df[WEEKNUMBER_KEY] = df[TIME_KEY].dt.weekofyear
+  df[HOUR_KEY] = df[TIME_KEY].dt.hour
