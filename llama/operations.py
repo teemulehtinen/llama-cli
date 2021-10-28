@@ -1,4 +1,5 @@
 import pandas
+from .common import nth_delta
 from .Config import TIME_KEY, PERSON_KEY
 
 WEEKDAY_KEY = 'Weekday'
@@ -22,7 +23,14 @@ def person_has_columns_value(rows, columns, value, reverse=False):
     has_value = all(row[c['key']] == value for c in columns)
     yield row[PERSON_KEY], not has_value if reverse else has_value
 
-def df_append_discrete_time_columns(df):
-  df[WEEKDAY_KEY] = df[TIME_KEY].dt.dayofweek
-  df[WEEKNUMBER_KEY] = df[TIME_KEY].dt.weekofyear
-  df[HOUR_KEY] = df[TIME_KEY].dt.hour
+def append_discrete_time_columns(rows):
+  rows[WEEKDAY_KEY] = rows[TIME_KEY].dt.dayofweek
+  rows[WEEKNUMBER_KEY] = rows[TIME_KEY].dt.weekofyear
+  rows[HOUR_KEY] = rows[TIME_KEY].dt.hour
+
+def times_until_end(groupby):
+  end_times = groupby[TIME_KEY].max() - groupby[TIME_KEY].min()
+  return end_times[end_times > 0]
+
+def times_until_rev(groupby, n=1):
+  return groupby[TIME_KEY].apply(nth_delta, n=n).dropna()

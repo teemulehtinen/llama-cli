@@ -7,7 +7,7 @@ from .common import (
   df_sum, df_sum_by_index, df_index_sums, groupby_as_ones, nth_delta
 )
 from .operations import (
-  WEEKDAY_KEY, WEEKNUMBER_KEY, HOUR_KEY, df_append_discrete_time_columns
+  WEEKDAY_KEY, WEEKNUMBER_KEY, HOUR_KEY, append_discrete_time_columns, times_until_end, times_until_rev
 )
 from .plotting import limited_minute_bins, nice_bars, nice_bins, nice_hist
 
@@ -32,8 +32,9 @@ class LlamaStats:
     h_attempts = pandas.DataFrame()
     grade_ratios = pandas.Series()
     end_minutes = pandas.Series()
+    first_minutes = pandas.Series()
     for _, table, rows in table_iterator:
-      df_append_discrete_time_columns(rows)
+      append_discrete_time_columns(rows)
       rows[TIME_KEY] = as_minute_scalar(rows[TIME_KEY])
       mp = table['max_points'] if 'max_points' in table else numpy.max(rows[GRADE_KEY])
       rows[GRADERATIO_KEY] = rows[GRADE_KEY] / mp
@@ -50,7 +51,8 @@ class LlamaStats:
       h_grades = df_sum_by_index(h_grades, maxgrades, byperson[HOUR_KEY].median().astype('int'))
       h_attempts = df_sum(h_attempts, rows.groupby(HOUR_KEY).size(), ATTEMPT_KEY)
       grade_ratios = grade_ratios.append(byperson[GRADERATIO_KEY].max(), True)
-      end_minutes = end_minutes.append(byperson[TIME_KEY].max() - byperson[TIME_KEY].min(), True)
+      end_minutes = end_minutes.append(times_until_end(byperson), True)
+      first_minutes = first_minutes.append(times_until_rev(byperson, 1), True)
     return {
       '_table_count': count,
       'person_grades': p_grades[GRADE_KEY],
@@ -61,6 +63,7 @@ class LlamaStats:
       '_hour': df_complete_n_index(h_grades.join(h_attempts), 24),
       'grade_ratios': grade_ratios,
       'end_minutes': end_minutes,
+      'first_minutes': first_minutes,
     }
 
   @staticmethod
@@ -76,7 +79,7 @@ class LlamaStats:
     minute_bins = limited_minute_bins(ovseries['end_minutes'])
     nice_bars(ax[2, 0], 'Grade/Weekday', ovseries['_weekday'][GRADE_KEY], WDAYS)
     nice_bars(ax[2, 1], 'Attempts/Weekday', ovseries['_weekday'][ATTEMPT_KEY], WDAYS)
-    #
+    nice_hist(ax[2, 2], '1st revision minutes', ovseries['first_minutes'], minute_bins)
     nice_bars(ax[3, 0], 'Grade/Hour', ovseries['_hour'][GRADE_KEY])
     nice_bars(ax[3, 1], 'Attempts/Hour', ovseries['_hour'][ATTEMPT_KEY])
     nice_hist(ax[3, 2], 'Exercise end minutes', ovseries['end_minutes'], minute_bins)
@@ -87,7 +90,7 @@ class LlamaStats:
     learners = {}
     KEEP_KEYS = [GRADE_KEY, WEEKDAY_KEY, WEEKNUMBER_KEY, EXERCISE_KEY, GRADERATIO_KEY]
     for _, table, rows in table_iterator:
-      df_append_discrete_time_columns(rows)
+      append_discrete_time_columns(rows)
       rows[EXERCISE_KEY] = [count for i in range(rows.shape[0])]
       mp = table['max_points'] if 'max_points' in table else numpy.max(rows[GRADE_KEY])
       rows[GRADERATIO_KEY] = rows[GRADE_KEY] / mp
@@ -139,7 +142,7 @@ class LlamaStats:
       'first_grades': byperson[GRADE_KEY].first(),
       'every_grading': rows[GRADE_KEY],
       'attempts': byperson.size(),
-      'end_minutes': byperson[TIME_KEY].max() - byperson[TIME_KEY].min(),
+      'end_minutes': times_until_end(byperson),
       'grade_changes': byperson[GRADE_KEY].diff().dropna(),
     }
     CHANGE_KEY = 'Change'
