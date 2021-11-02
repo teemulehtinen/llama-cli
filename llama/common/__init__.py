@@ -24,3 +24,16 @@ def as_list(param):
   if type(param) == tuple:
     return list(param)
   return [param]
+
+def flatten_dict(d):
+  r = {}
+  for k, v in d.items():
+    if type(v) == dict:
+      for k2, v2 in v.items():
+        r[f'{k}_{k2}'] = v2
+    if type(v) == list:
+      for i, v2 in enumerate(v):
+        r[f'{k}_{i}'] = v2
+    else:
+      r[k] = v
+  return r

@@ -1,15 +1,18 @@
 import numpy
 import pandas
 from matplotlib import pyplot
-from .Config import TIME_KEY, PERSON_KEY, GRADE_KEY
 from .common import (
-  as_minute_scalar, df_adjust_index_to_zero, df_complete_n_index,
-  df_sum, df_sum_by_index, df_index_sums, groupby_as_ones, nth_delta
+  as_minute_scalar, histogram_vals, sums_as_histogram_vals,
+  df_adjust_index_to_zero, df_complete_n_index, df_sum,
+  df_sum_by_index, df_index_sums, flatten_dict, groupby_as_ones,
+  nth_delta, zero_centered_range
 )
 from .operations import (
-  WEEKDAY_KEY, WEEKNUMBER_KEY, HOUR_KEY, append_discrete_time_columns, times_until_end, times_until_rev
+  WEEKDAY_KEY, WEEKNUMBER_KEY, HOUR_KEY, append_discrete_time_columns,
+  times_until_end, times_until_rev
 )
 from .plotting import limited_minute_bins, nice_bars, nice_bins, nice_hist
+from .Config import TIME_KEY, PERSON_KEY, GRADE_KEY
 
 ATTEMPT_KEY = 'Attempt'
 EXERCISE_KEY = 'Exercise'
@@ -55,34 +58,51 @@ class LlamaStats:
       first_minutes = first_minutes.append(times_until_rev(byperson, 1), True)
     return {
       '_table_count': count,
-      'person_grades': p_grades[GRADE_KEY],
-      'person_attempts': p_attempts[ATTEMPT_KEY],
-      'person_exercises': p_exercises[ATTEMPT_KEY],
-      '_weekcount': df_adjust_index_to_zero(w_grades.join(w_attempts)),
+      'learner_grades': p_grades[GRADE_KEY],
+      'learner_attempts': p_attempts[ATTEMPT_KEY],
+      'learner_exercises': p_exercises[ATTEMPT_KEY],
+      '_week': df_adjust_index_to_zero(w_grades.join(w_attempts)),
       '_weekday': df_complete_n_index(wd_grades.join(wd_attempts), 7),
-      '_hour': df_complete_n_index(h_grades.join(h_attempts), 24),
+      '_24hour': df_complete_n_index(h_grades.join(h_attempts), 24),
       'grade_ratios': grade_ratios,
       'end_minutes': end_minutes,
-      'first_minutes': first_minutes,
+      'revision_1_minutes': first_minutes,
     }
 
   @staticmethod
   def overall_plot(ovseries):
     _, ax = pyplot.subplots(4, 3, figsize=(7, 10), gridspec_kw={ 'hspace': 0.4, 'wspace': 0.3 })
     pyplot.suptitle(f'Overall statistics ({ovseries["_table_count"]} tables)')
-    nice_hist(ax[0, 0], 'Learner grades', ovseries['person_grades'])
-    nice_hist(ax[0, 1], 'Learner attempts', ovseries['person_attempts'])
-    nice_hist(ax[0, 2], 'Learner exercises', ovseries['person_exercises'])
-    nice_bars(ax[1, 0], 'Grade/Week', ovseries['_weekcount'][GRADE_KEY])
-    nice_bars(ax[1, 1], 'Attempts/Week', ovseries['_weekcount'][ATTEMPT_KEY])
+    nice_hist(ax[0, 0], 'Learner grades', ovseries['learner_grades'])
+    nice_hist(ax[0, 1], 'Learner attempts', ovseries['learner_attempts'])
+    nice_hist(ax[0, 2], 'Learner exercises', ovseries['learner_exercises'])
+    nice_bars(ax[1, 0], 'Grade/Week', ovseries['_week'][GRADE_KEY])
+    nice_bars(ax[1, 1], 'Attempts/Week', ovseries['_week'][ATTEMPT_KEY])
     nice_hist(ax[1, 2], 'Exercise grades', ovseries['grade_ratios'])
     minute_bins = limited_minute_bins(ovseries['end_minutes'])
     nice_bars(ax[2, 0], 'Grade/Weekday', ovseries['_weekday'][GRADE_KEY], WDAYS)
     nice_bars(ax[2, 1], 'Attempts/Weekday', ovseries['_weekday'][ATTEMPT_KEY], WDAYS)
-    nice_hist(ax[2, 2], '1st revision minutes', ovseries['first_minutes'], minute_bins)
-    nice_bars(ax[3, 0], 'Grade/Hour', ovseries['_hour'][GRADE_KEY])
-    nice_bars(ax[3, 1], 'Attempts/Hour', ovseries['_hour'][ATTEMPT_KEY])
+    nice_hist(ax[2, 2], '1st revision minutes', ovseries['revision_1_minutes'], minute_bins)
+    nice_bars(ax[3, 0], 'Grade/Hour', ovseries['_24hour'][GRADE_KEY])
+    nice_bars(ax[3, 1], 'Attempts/Hour', ovseries['_24hour'][ATTEMPT_KEY])
     nice_hist(ax[3, 2], 'Exercise end minutes', ovseries['end_minutes'], minute_bins)
+  
+  @staticmethod
+  def overall_variables(source, ovseries):
+    return source['name'], flatten_dict({
+      'learner_grades': histogram_vals(ovseries['learner_grades']),
+      'learner_attempts': histogram_vals(ovseries['learner_attempts']),
+      'learner_exercises': histogram_vals(ovseries['learner_exercises']),
+      'week_grades': sums_as_histogram_vals(ovseries['_week'][GRADE_KEY]),
+      'week_attempts': sums_as_histogram_vals(ovseries['_week'][ATTEMPT_KEY]),
+      'weekday_grades': sums_as_histogram_vals(ovseries['_weekday'][GRADE_KEY]),
+      'weekday_attempts': sums_as_histogram_vals(ovseries['_weekday'][ATTEMPT_KEY]),
+      '24hour_grades': sums_as_histogram_vals(ovseries['_24hour'][GRADE_KEY]),
+      '24hour_attempts': sums_as_histogram_vals(ovseries['_24hour'][ATTEMPT_KEY]),
+      'grade_ratios': histogram_vals(ovseries['grade_ratios'], (0, 1)),
+      'end_minutes': histogram_vals(ovseries['end_minutes'], (0, 20)),
+      'revision_1_minutes': histogram_vals(ovseries['revision_1_minutes'], (0, 20)),
+    })
 
   @staticmethod
   def learner_series(table_iterator, include_persons=None):
@@ -116,12 +136,12 @@ class LlamaStats:
         '_person': person,
         'exercise_grades': maxgrades,
         'exercise_attempts': byexercise.size(),
-        '_weekcount': df_adjust_index_to_zero(w_grades.join(w_attempts)),
+        '_week': df_adjust_index_to_zero(w_grades.join(w_attempts)),
         '_weekday': df_complete_n_index(wd_grades.join(wd_attempts), 7),
-        '_hour': df_complete_n_index(h_grades.join(h_attempts), 24),
-        'exercise_grade_ratios': byexercise[GRADERATIO_KEY].max(),
+        '_24hour': df_complete_n_index(h_grades.join(h_attempts), 24),
+        'grade_ratios': byexercise[GRADERATIO_KEY].max(),
         'end_minutes': times_until_end(byexercise),
-        'first_minutes': times_until_rev(byexercise, 1),
+        'revision_1_minutes': times_until_rev(byexercise, 1),
       }
     return [person_dict(person, rows) for person, rows in learners.items()]
 
@@ -129,19 +149,34 @@ class LlamaStats:
   def learner_plot(leseries):
     _, ax = pyplot.subplots(4, 3, figsize=(7, 10), gridspec_kw={ 'hspace': 0.4, 'wspace': 0.3 })
     pyplot.suptitle(f'Learner #{int(leseries["_person"])}')
-    nice_hist(ax[0, 0], 'Exercise grades', leseries['exercise_grade_ratios'])
+    nice_hist(ax[0, 0], 'Exercise grades', leseries['grade_ratios'])
     nice_hist(ax[0, 1], 'Exercise attempts', leseries['exercise_attempts'])
     nice_bars(ax[0, 2], 'Grade/Exercise', leseries['exercise_grades'])
-    nice_bars(ax[1, 0], 'Grade/Week', leseries['_weekcount'][GRADE_KEY])
-    nice_bars(ax[1, 1], 'Attempts/Week', leseries['_weekcount'][ATTEMPT_KEY])
+    nice_bars(ax[1, 0], 'Grade/Week', leseries['_week'][GRADE_KEY])
+    nice_bars(ax[1, 1], 'Attempts/Week', leseries['_week'][ATTEMPT_KEY])
     nice_bars(ax[1, 2], 'Attempts/Exercise', leseries['exercise_attempts'])
     minute_bins = limited_minute_bins(leseries['end_minutes'])
     nice_bars(ax[2, 0], 'Grade/Weekday', leseries['_weekday'][GRADE_KEY], WDAYS)
     nice_bars(ax[2, 1], 'Attempts/Weekday', leseries['_weekday'][ATTEMPT_KEY], WDAYS)
-    nice_hist(ax[2, 2], '1st revision minutes', leseries['first_minutes'], minute_bins)
-    nice_bars(ax[3, 0], 'Grade/Hour', leseries['_hour'][GRADE_KEY])
-    nice_bars(ax[3, 1], 'Attempts/Hour', leseries['_hour'][ATTEMPT_KEY])
+    nice_hist(ax[2, 2], '1st revision minutes', leseries['revision_1_minutes'], minute_bins)
+    nice_bars(ax[3, 0], 'Grade/Hour', leseries['_24hour'][GRADE_KEY])
+    nice_bars(ax[3, 1], 'Attempts/Hour', leseries['_24hour'][ATTEMPT_KEY])
     nice_hist(ax[3, 2], 'Exercise end minutes', leseries['end_minutes'], minute_bins)
+
+  @staticmethod
+  def learner_variables(leseries):
+    return leseries['_person'], flatten_dict({
+      'week_grades': sums_as_histogram_vals(leseries['_week'][GRADE_KEY]),
+      'week_attempts': sums_as_histogram_vals(leseries['_week'][ATTEMPT_KEY]),
+      'weekday_grades': sums_as_histogram_vals(leseries['_weekday'][GRADE_KEY]),
+      'weekday_attempts': sums_as_histogram_vals(leseries['_weekday'][ATTEMPT_KEY]),
+      '24hour_grades': sums_as_histogram_vals(leseries['_24hour'][GRADE_KEY]),
+      '24hour_attempts': sums_as_histogram_vals(leseries['_24hour'][ATTEMPT_KEY]),
+      'grade_ratios': histogram_vals(leseries['grade_ratios'], (0, 1)),
+      'exercise_attempts': histogram_vals(leseries['exercise_attempts'], (0, 10)),
+      'end_minutes': histogram_vals(leseries['end_minutes'], (0, 20)),
+      'revision_1_minutes': histogram_vals(leseries['revision_1_minutes'], (0, 20)),
+    })
 
   @staticmethod
   def exercise_series(rows, rev_n=2):
@@ -151,10 +186,10 @@ class LlamaStats:
       '_person_count': len(rows[PERSON_KEY].unique()),
       'best_grades': byperson[GRADE_KEY].max(),
       'first_grades': byperson[GRADE_KEY].first(),
-      'every_grading': rows[GRADE_KEY],
       'attempts': byperson.size(),
-      'end_minutes': times_until_end(byperson),
+      'every_grading': rows[GRADE_KEY],
       'grade_changes': byperson[GRADE_KEY].diff().dropna(),
+      'end_minutes': times_until_end(byperson),
     }
     CHANGE_KEY = 'Change'
     for i in range(1, rev_n + 1):
@@ -188,7 +223,24 @@ class LlamaStats:
     nice_hist(ax[2, 2], '3rd minutes', exseries['revision_2_minutes'], minute_bins)
     nice_hist(ax[3, 2], 'End minutes', exseries['end_minutes'], minute_bins)
 
-  @classmethod
+  @staticmethod
+  def exercise_variables(table, exseries):
+    return table['name'], flatten_dict({
+      'best_grades': histogram_vals(exseries['best_grades']),
+      'first_grades': histogram_vals(exseries['first_grades']),
+      'attempts': histogram_vals(exseries['attempts']),
+      'every_grading': histogram_vals(exseries['every_grading']),
+      'grade_changes': histogram_vals(exseries['grade_changes'], zero_centered_range),
+      'end_minutes': histogram_vals(exseries['end_minutes'], (0, 20)),
+      'revision_1_grades': histogram_vals(exseries['revision_1_grades']),
+      'revision_1_changes': histogram_vals(exseries['revision_1_changes'], zero_centered_range),
+      'revision_1_minutes': histogram_vals(exseries['revision_1_minutes'], (0, 20)),
+      'revision_2_grades': histogram_vals(exseries['revision_1_grades']),
+      'revision_2_changes': histogram_vals(exseries['revision_1_changes'], zero_centered_range),
+      'revision_2_minutes': histogram_vals(exseries['revision_1_minutes'], (0, 20)),
+    })
+
+  @staticmethod
   def description(cls, exseries):
     return pandas.DataFrame({
       k: (cls.strip_outliers(k, s) if k.endswith('_minutes') else s).describe()

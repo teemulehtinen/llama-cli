@@ -148,6 +148,13 @@ Renders a statistic page for each learner.
 * `pdf_name: str` (optional) a file name for pdf output, else try to plot to window
 ![example](img/learner.png)
 
+### `llama.learner_variables(persons, select, csv_name)`
+
+Compresses learner statistics into ~60 variables.
+* `persons: list` (optional) a list of persons numbers to include
+* `select: dict` (optional) see `llama.list`
+* `csv_name: str` (optional) a file name for csv output, else print
+
 ### `llama.execise_description(select)`
 
 Calculates statistical distributions for each selected exercise table.
@@ -159,3 +166,9 @@ Renders a statistic page for each exercise.
 * `select: dict` (optional) see `llama.list`
 * `pdf_name: str` (optional) a file name for pdf output, else try to plot to window
 ![example](img/exercise.png)
+
+### `llama.exercise_variables(select, csv_name)`
+
+Compresses exercise statistics into ~60 variables.
+* `select: dict` (optional) see `llama.list`
+* `csv_name: str` (optional) a file name for csv output, else print

@@ -3,7 +3,10 @@ from .Filters import Filters
 from .LlamaStats import LlamaStats
 from .operations import parse_timecolumn
 from .plotting import multipage_plot_or_show
-from .common import require, as_list, read_json, read_csv
+from .common import (
+  require, as_list, read_json, read_csv,
+  write_or_print, df_from_iterator
+)
 
 class LlamaApi:
 
@@ -46,8 +49,9 @@ class LlamaApi:
 
   def overall_description(self, select=None):
     series = LlamaStats.overall_series(self.get(select))
+    print(f'Table count: {series["_tables"]}')
     print(LlamaStats.description(series))
-    print(series['_weekday'], series['_weekcount'])
+    print(series['_week'], series['_weekday'], series['_24hour'])
 
   def overall_pdf(self, select=None, pdf_name=None):
     multipage_plot_or_show(
@@ -58,9 +62,9 @@ class LlamaApi:
 
   def learner_description(self, persons=None, select=None):
     for series in LlamaStats.learner_series(self.get(select), persons):
-      print(series['_person'])
+      print(f'Person: {series["_person"]}')
       print(LlamaStats.description(series))
-      print(series['_weekday'], series['_weekcount'])
+      print(series['_week'], series['_weekday'], series['_24hour'])
 
   def learner_pdf(self, persons=None, select=None, pdf_name=None):
     multipage_plot_or_show(
@@ -68,6 +72,12 @@ class LlamaApi:
       LlamaStats.learner_series(self.get(select), persons),
       lambda r: LlamaStats.learner_plot(r)
     )
+  
+  def learner_variables(self, persons=None, select=None, csv_name=None):
+    write_or_print(df_from_iterator(
+      LlamaStats.learner_variables(ls)
+      for ls in LlamaStats.learner_series(self.get(select), persons)
+    ), csv_name)
 
   def exercise_description(self, select=None):
     for _, t, rows in self.get(select):
@@ -81,3 +91,9 @@ class LlamaApi:
       self.get(select),
       lambda r: LlamaStats.exercise_plot(r[1], LlamaStats.exercise_series(r[2]))
     )
+
+  def exercise_variables(self, select=None, csv_name=None):
+    write_or_print(df_from_iterator(
+      LlamaStats.exercise_variables(table, LlamaStats.exercise_series(rows))
+      for _, table, rows in self.get(select)
+    ), csv_name)
