@@ -31,5 +31,7 @@ def command(args, config):
         if not rows is None and count(api.file_columns(t, rows)) > 0:
           file_n = count(api.fetch_files(t, rows, only_cache=True))
           print(f'{rows_n} rows, {file_n} files, last {last_time(rows)}')
-        else:
+        elif rows_n > 0:
           print(f'{rows_n} rows, last {last_time(rows)}')
+        else:
+          print('0 rows fetched')
