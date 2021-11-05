@@ -13,12 +13,13 @@ class LlamaApi:
   def __init__(self, *directories):
     self.sources = []
     self.persons = []
+    self.cache = []
     if len(directories) == 0:
       self._read_dir(EXPORT_DIR)
     else:
       for d in directories:
         self._read_dir(d)
-  
+
   def _read_dir(self, dir):
     index = read_json((dir, EXPORT_INDEX_JSON))
     require(not index is None, f'Unable to read {dir}/{EXPORT_INDEX_JSON}')
@@ -47,53 +48,75 @@ class LlamaApi:
         parse_timecolumn(rows)
         yield s, t, rows
 
+  def _cached_series(self, target, select):
+    key = {
+      **{
+        k: v for k, v in (select or {}).items()
+        if (target == 'learner' or k != 'persons')
+      },
+      'target': target
+    }
+    try:
+      return next(pl for k, pl in self.cache if k == key)
+    except StopIteration:
+      if target == 'overall':
+        pl = LlamaStats.overall_series(self.get(select))
+      elif target == 'learner':
+        pl = LlamaStats.learner_series(self.get(select), select.get('persons'))
+      elif target == 'exercise':
+        pl = [LlamaStats.exercise_series(t, rows) for _, t, rows in self.get(select)]
+      else:
+        return None
+      self.cache.append((key, pl))
+      return pl
+  
+  def _print_description(self, series):
+    print(series['_values'])
+    print(LlamaStats.description(series).transpose())
+
   def overall_description(self, select=None):
-    series = LlamaStats.overall_series(self.get(select))
-    print(f'Table count: {series["_tables"]}')
-    print(LlamaStats.description(series))
-    print(series['_week'], series['_weekday'], series['_24hour'])
+    ovseries = self._cached_series('overall', select)
+    self._print_description(ovseries)
 
   def overall_pdf(self, select=None, pdf_name=None):
     multipage_plot_or_show(
       pdf_name,
-      [LlamaStats.overall_series(self.get(select))],
-      lambda r: LlamaStats.overall_plot(r)
+      [self._cached_series('overall', select)],
+      lambda ovseries: LlamaStats.overall_plot(ovseries)
     )
 
-  def learner_description(self, persons=None, select=None):
-    for series in LlamaStats.learner_series(self.get(select), persons):
-      print(f'Person: {series["_person"]}')
-      print(LlamaStats.description(series))
-      print(series['_week'], series['_weekday'], series['_24hour'])
+  def learner_description(self, select=None):
+    for leseries in self._cached_series('learner', select):
+      self._print_description(leseries)
 
-  def learner_pdf(self, persons=None, select=None, pdf_name=None):
+  def learner_pdf(self, select=None, pdf_name=None):
+    ovseries = self._cached_series('overall', select)
     multipage_plot_or_show(
       pdf_name,
-      LlamaStats.learner_series(self.get(select), persons),
-      lambda r: LlamaStats.learner_plot(r)
+      self._cached_series('learner', select),
+      lambda leseries: LlamaStats.learner_plot(leseries, ovseries)
     )
   
-  def learner_variables(self, persons=None, select=None, csv_name=None):
+  def learner_variables(self, select=None, csv_name=None):
     write_or_print(df_from_iterator(
-      LlamaStats.learner_variables(ls)
-      for ls in LlamaStats.learner_series(self.get(select), persons)
+      LlamaStats.learner_variables(leseries)
+      for leseries in self._cached_series('learner', select)
     ), csv_name)
 
   def exercise_description(self, select=None):
-    for _, t, rows in self.get(select):
-      series = LlamaStats.exercise_series(rows)
-      print(t['name'])
-      print(LlamaStats.description(series))
+    for exseries in self._cached_series('exercise', select):
+      self._print_description(exseries)
 
   def exercise_pdf(self, select=None, pdf_name=None):
+    ovseries = self._cached_series('overall', select)
     multipage_plot_or_show(
       pdf_name,
-      self.get(select),
-      lambda r: LlamaStats.exercise_plot(r[1], LlamaStats.exercise_series(r[2]))
+      self._cached_series('exercise', select),
+      lambda exseries: LlamaStats.exercise_plot(exseries, ovseries)
     )
 
   def exercise_variables(self, select=None, csv_name=None):
     write_or_print(df_from_iterator(
-      LlamaStats.exercise_variables(table, LlamaStats.exercise_series(rows))
-      for _, table, rows in self.get(select)
+      LlamaStats.exercise_variables(exseries)
+      for exseries in self._cached_series('exercise', select)
     ), csv_name)

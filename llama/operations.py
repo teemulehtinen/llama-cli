@@ -1,5 +1,5 @@
 import pandas
-from .common import nth_delta
+from .common import groupby_ranges, groupby_nth_deltas
 from .Config import TIME_KEY, PERSON_KEY
 
 WEEKDAY_KEY = 'Weekday'
@@ -29,8 +29,7 @@ def append_discrete_time_columns(rows):
   rows[HOUR_KEY] = rows[TIME_KEY].dt.hour
 
 def times_until_end(groupby):
-  end_times = groupby[TIME_KEY].max() - groupby[TIME_KEY].min()
-  return end_times[end_times > 0]
+  return groupby_ranges(groupby, TIME_KEY)
 
-def times_until_rev(groupby, n=1):
-  return groupby[TIME_KEY].apply(nth_delta, n=n).dropna()
+def times_nth_delta(groupby, n=1):
+  return groupby_nth_deltas(groupby, TIME_KEY, n)
