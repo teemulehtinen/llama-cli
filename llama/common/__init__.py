@@ -31,7 +31,7 @@ def flatten_dict(d):
     if type(v) == dict:
       for k2, v2 in v.items():
         r[f'{k}_{k2}'] = v2
-    if type(v) == list:
+    elif type(v) == list:
       for i, v2 in enumerate(v):
         r[f'{k}_{i}'] = v2
     else:

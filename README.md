@@ -153,7 +153,7 @@ Renders a statistic page for each learner.
 
 ### `llama.learner_variables(select, csv_name)`
 
-Compresses learner statistics into ~60 variables.
+Compresses learner distributions into 21 variables per learner.
 * `persons: list` (optional) a list of persons numbers to include
 * `select: dict` (optional) see `llama.list`
   * `persons: str[]` (additionally, optional) list of person identifiers to include
@@ -173,6 +173,6 @@ Renders a statistic page for each exercise.
 
 ### `llama.exercise_variables(select, csv_name)`
 
-Compresses exercise statistics into ~60 variables.
+Compresses exercise distributions into 23 variables per exercise.
 * `select: dict` (optional) see `llama.list`
 * `csv_name: str` (optional) a file name for csv output, else print

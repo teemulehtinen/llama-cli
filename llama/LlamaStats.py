@@ -3,7 +3,7 @@ import pandas
 from matplotlib import pyplot
 from pandas.core import groupby
 
-from llama.common.dataframes import groupby_nth_deltas
+from llama.common.dataframes import groupby_nth_deltas, measures, sums_measures
 from .common import (
   as_minute_scalar, df_adjust_index_to_zero, df_complete_n_index,
   df_sum, df_sum_by_index, df_index_sums, flatten_dict,
@@ -183,10 +183,12 @@ class LlamaStats:
       ovseries,
     )
 
-  @staticmethod
-  def learner_variables(leseries):
-    return leseries['_values']['person'], flatten_dict({
-    })
+  @classmethod
+  def learner_variables(cls, leseries):
+    return (
+      leseries['_values']['person'],
+      cls.variables(leseries, ['grade_sum', 'action_sum', 'exercise_sum'])
+    )
 
   @staticmethod
   def exercise_series(table, rows, rev_n=2):
@@ -237,10 +239,12 @@ class LlamaStats:
       ovseries
     )
 
-  @staticmethod
-  def exercise_variables(exseries):
-    return exseries['_values']['name'], flatten_dict({
-    })
+  @classmethod
+  def exercise_variables(cls, exseries):
+    return (
+      exseries['_values']['name'],
+      cls.variables(exseries, ['person_count'])
+    )
 
   @staticmethod
   def description(series):
@@ -248,3 +252,16 @@ class LlamaStats:
       k: (strip_outliers(k, s) if k.endswith('_minutes') else s).describe()
       for k, s in series.items() if not k.startswith('_')
     })
+
+  @staticmethod
+  def variables(series, values_keys):
+    def extract(k, s):
+      if k.endswith('_sum'):
+        ms = sums_measures(s)
+      else:
+        ms = measures(s[s <= 20] if k.endswith('minutes') else s)
+      return {'md': ms['m'], 'mad': ms['mad']}
+    return {
+      **{k: series['_values'][k] for k in values_keys},
+      **flatten_dict({ k: extract(k, s) for k, s in series.items() if k != '_values'}),
+    }

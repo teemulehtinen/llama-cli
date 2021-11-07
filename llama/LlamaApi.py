@@ -62,7 +62,7 @@ class LlamaApi:
       if target == 'overall':
         pl = LlamaStats.overall_series(self.get(select))
       elif target == 'learner':
-        pl = LlamaStats.learner_series(self.get(select), select.get('persons'))
+        pl = LlamaStats.learner_series(self.get(select), (select or {}).get('persons'))
       elif target == 'exercise':
         pl = [LlamaStats.exercise_series(t, rows) for _, t, rows in self.get(select)]
       else:
