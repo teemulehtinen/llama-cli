@@ -116,7 +116,11 @@ class AplusApi(AbstractDjangoApi):
     data = self.fetch_json(url)
     return { k: data.get(k) for k in self.META_KEYS }
 
-  def drop_for_export(self, table, rows):
+  def drop_for_export(self, table, rows, volatile_columns):
+    pere = self.personal_re
+    for name in volatile_columns or []:
+      if name in rows.columns:
+        rows[name] = rows[name].apply(lambda s: pere.sub('', str(s)) if s else s)
     return rows.drop(columns=[c for c in rows.columns if c in self.REMOVE_AT_EXPORT])
 
   @staticmethod

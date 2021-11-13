@@ -15,7 +15,6 @@ def add_to_person_map(person_map, person_included, rows):
       person_map[p] = ap
 
 def command(args, config):
-  require(args == [], 'Unknown command')
   sources = []
   person_map = {}
   person_included = Filters.person_included()
@@ -47,7 +46,7 @@ def command(args, config):
             metas = True
 
         table_csv = s['api'].table_csv_name(t['id'])[1:]
-        export_rows = s['api'].export_rows(t, rows, person_map, metas)
+        export_rows = s['api'].export_rows(t, rows, person_map, metas, args)
         write_csv((EXPORT_DIR,) + table_csv, export_rows)
         tables.append({
           **t,

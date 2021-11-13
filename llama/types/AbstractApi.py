@@ -81,8 +81,8 @@ class AbstractApi:
         self.fetch_delay()
       yield { 'row': row, 'path': path, 'content': content, 'cached': cached }
 
-  def export_rows(self, table, rows, person_map, metas=False):
-    data = self.drop_for_export(table, rows)
+  def export_rows(self, table, rows, person_map, metas=False, volatile_columns=None):
+    data = self.drop_for_export(table, rows, volatile_columns)
     data[PERSON_KEY] = data[PERSON_KEY].map(person_map)
     data = data.dropna(subset=[PERSON_KEY]).reset_index(drop=True)
     table_dir = self.table_dir_name(table['id'])
