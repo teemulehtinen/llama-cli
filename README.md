@@ -139,24 +139,19 @@ Renders a page about overall statistics.
 
 Calculates statistical grade and attempt distributions,
 as well as weekly and daily patterns for the learners.
-* `persons: list` (optional) a list of persons numbers to include
 * `select: dict` (optional) see `llama.list`
 
 ### `llama.learner_pdf(select, pdf_name)`
 
 Renders a statistic page for each learner.
-* `persons: list` (optional) a list of persons numbers to include
 * `select: dict` (optional) see `llama.list`
-  * `persons: str[]` (additionally, optional) list of person identifiers to include
 * `pdf_name: str` (optional) a file name for pdf output, else try to plot to window
 ![example](img/learner.png)
 
 ### `llama.learner_variables(select, csv_name)`
 
 Compresses learner distributions into 21 variables per learner.
-* `persons: list` (optional) a list of persons numbers to include
 * `select: dict` (optional) see `llama.list`
-  * `persons: str[]` (additionally, optional) list of person identifiers to include
 * `csv_name: str` (optional) a file name for csv output, else print
 
 ### `llama.execise_description(select)`
