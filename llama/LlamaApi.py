@@ -1,7 +1,7 @@
 from .Config import EXPORT_DIR, EXPORT_INDEX_JSON
 from .Filters import Filters
 from .LlamaStats import LlamaStats
-from .operations import parse_timecolumn
+from .operations import filter_by_person, parse_timecolumn
 from .plotting import multipage_plot_or_show
 from .common import (
   require, as_list, read_json, read_csv,
@@ -41,35 +41,38 @@ class LlamaApi:
         cols = [c['key'] for c in t['columns']]
         print(f'#{t["id"]} "{t["name"]}": {" ".join(cols)}')
 
+  def _persons(self, select):
+    inc = set([])
+    exc = set([])
+    for s in [] if select is None else as_list(select):
+      if 'persons' in s:
+        (exc if s.get('reverse', False) else inc).update(s['persons'])
+    return (inc if len(inc) > 0 else None), (exc if len(exc) > 0 else None)
+
   def get(self, select=None):
+    persons_in, persons_out = self._persons(select)
     for s in self._select(select):
       for t in s['tables']:
         rows = read_csv((s['dir'], t['data_file']))
         parse_timecolumn(rows)
-        yield s, t, rows
+        yield s, t, filter_by_person(rows, persons_in, persons_out)
 
   def _cached_series(self, target, select):
-    key = {
-      **{
-        k: v for k, v in (select or {}).items()
-        if (target == 'learner' or k != 'persons')
-      },
-      'target': target
-    }
+    key = (select, target)
     try:
       return next(pl for k, pl in self.cache if k == key)
     except StopIteration:
       if target == 'overall':
         pl = LlamaStats.overall_series(self.get(select))
       elif target == 'learner':
-        pl = LlamaStats.learner_series(self.get(select), (select or {}).get('persons'))
+        pl = LlamaStats.learner_series(self.get(select))
       elif target == 'exercise':
         pl = [LlamaStats.exercise_series(t, rows) for _, t, rows in self.get(select)]
       else:
         return None
       self.cache.append((key, pl))
       return pl
-  
+
   def _print_description(self, series):
     print(series['_values'])
     print(LlamaStats.description(series).transpose())

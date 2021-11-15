@@ -1,19 +1,16 @@
 import numpy
 import pandas
-from matplotlib import pyplot
-from pandas.core import groupby
 
-from llama.common.dataframes import groupby_nth_deltas, measures, sums_measures
 from .common import (
   as_minute_scalar, df_adjust_index_to_zero, df_complete_n_index,
-  df_sum, df_sum_by_index, df_index_sums, flatten_dict,
-  groupby_as_ones, nth_delta, strip_outliers
+  df_sum, df_sum_by_index, df_index_sums, flatten_dict, groupby_as_ones,
+  groupby_nth_deltas, measures, strip_outliers, sums_measures
 )
 from .operations import (
   WEEKDAY_KEY, WEEKNUMBER_KEY, HOUR_KEY,
   append_discrete_time_columns, times_until_end, times_nth_delta
 )
-from .plotting import limited_minute_bins, nice_bins, nice_hist, nice_plot_page
+from .plotting import limited_minute_bins, nice_bins, nice_plot_page
 from .Config import TIME_KEY, PERSON_KEY, GRADE_KEY
 
 COUNT_KEY = 'Count'
@@ -115,7 +112,7 @@ class LlamaStats:
     )
 
   @staticmethod
-  def learner_series(table_iterator, include_persons=None, rev_n=2):
+  def learner_series(table_iterator, rev_n=2):
     count = 0
     learners = {}
     KEEP_KEYS = [GRADE_KEY, TIME_KEY, WEEKNUMBER_KEY, WEEKDAY_KEY, HOUR_KEY, EXERCISE_KEY, GRADERATIO_KEY]
@@ -126,12 +123,11 @@ class LlamaStats:
       mp = table.get('max_points', numpy.max(rows[GRADE_KEY]))
       rows[GRADERATIO_KEY] = rows[GRADE_KEY] / mp
       for person, g_rows in rows.groupby(PERSON_KEY):
-        if include_persons is None or person in include_persons:
-          g_rows = g_rows.drop(columns=[c for c in g_rows.columns if not c in KEEP_KEYS])
-          if not person in learners:
-            learners[person] = g_rows.reset_index(drop=True)
-          else:
-            learners[person] = learners[person].append(g_rows, True)
+        g_rows = g_rows.drop(columns=[c for c in g_rows.columns if not c in KEEP_KEYS])
+        if not person in learners:
+          learners[person] = g_rows.reset_index(drop=True)
+        else:
+          learners[person] = learners[person].append(g_rows, True)
       count += 1
     def person_dict(person, rows):
       byexercise = rows.groupby(EXERCISE_KEY)
@@ -143,7 +139,7 @@ class LlamaStats:
       week = df_adjust_index_to_zero(w_grades.join(w_count))
       return {
         '_values': {
-          'person': int(person),
+          'person': person,
           'grade_sum': int(numpy.sum(maxgrades)),
           'action_sum': int(numpy.sum(byexercise.size())),
           'exercise_sum': int(numpy.sum(groupby_as_ones(byexercise))),
@@ -187,7 +183,7 @@ class LlamaStats:
   def learner_variables(cls, leseries):
     return (
       leseries['_values']['person'],
-      cls.variables(leseries, ['grade_sum', 'action_sum', 'exercise_sum'])
+      cls.variables(leseries, ['person', 'grade_sum', 'action_sum', 'exercise_sum'])
     )
 
   @staticmethod

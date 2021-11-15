@@ -1,5 +1,5 @@
 import pandas
-from .common import groupby_ranges, groupby_nth_deltas
+from .common import df_accepted, groupby_ranges, groupby_nth_deltas
 from .Config import TIME_KEY, PERSON_KEY
 
 WEEKDAY_KEY = 'Weekday'
@@ -12,6 +12,9 @@ def parse_timecolumn(rows):
 
 def last_time(rows):
   return rows[TIME_KEY].max()
+
+def filter_by_person(rows, included=None, excluded=None):
+  return pandas.DataFrame(df_accepted(rows, PERSON_KEY, included, excluded))
 
 def filter_to_last_by_person(rows):
   return rows\

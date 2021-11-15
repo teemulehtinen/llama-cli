@@ -107,10 +107,11 @@ Calculated distributions are cached in memory for multiple queries.
 
 Lists sources and tables from the data. Subset of data can be selected with
 the optional select dictionary.
-* `select: dict OR dict[]` (optional) including following keys
+* `select: dict OR dict[]` (optional) comprised of the following keys
   * `source: int` (optional) index of a learning data source
   * `table: str` (optional) text to match table name (or id)
   * `table_by_id: bool` (optional) True to match `table` with table id
+  * `persons: str[]` (optional) list of person identifiers
   * `reverse: bool` (optional) True to exclude above matches and include rest
 
 ### `llama.get(select)`
@@ -140,7 +141,6 @@ Calculates statistical grade and attempt distributions,
 as well as weekly and daily patterns for the learners.
 * `persons: list` (optional) a list of persons numbers to include
 * `select: dict` (optional) see `llama.list`
-  * `persons: str[]` (additionally, optional) list of person identifiers to include
 
 ### `llama.learner_pdf(select, pdf_name)`
 

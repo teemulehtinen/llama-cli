@@ -2,6 +2,15 @@ import numpy
 import pandas
 from scipy import stats
 
+def df_accepted(df, key, include=None, exclude=None):
+  if include is None:
+    if exclude is None:
+      return df
+    return df[~df[key].isin(exclude)]
+  if exclude is None:
+    return df[df[key].isin(include)]
+  return df[df[key].isin(include) & ~df[key].isin(exclude)]
+
 def df_complete_n_index(df, n, fill = 0):
   zeros = [fill for _ in range(n)]
   df_zero = pandas.DataFrame({k: zeros for k in df.columns}, index=[i for i in range(n)])

@@ -26,15 +26,16 @@ class Filters:
 
   def add(self, filters):
     for f in filters:
-      reverse = f.get('reverse', False)
-      if not f.get('value') is None:
-        self.person_filters.append(f)
-      elif (not reverse if self.inclusive else reverse):
-        self.inclusions.append(f)
-      else:
-        self.exclusions.append(f)
+      if 'source' in f or 'table' in f or 'column' in f:
+        reverse = f.get('reverse', False)
+        if not f.get('value') is None:
+          self.person_filters.append(f)
+        elif (not reverse if self.inclusive else reverse):
+          self.inclusions.append(f)
+        else:
+          self.exclusions.append(f)
     return self
-  
+
   def has_person_filters(self):
     return len(self.person_filters) > 0
 
