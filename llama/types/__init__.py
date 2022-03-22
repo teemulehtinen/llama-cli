@@ -1,5 +1,5 @@
 from ..common import require
-from . import aplus
+from . import aplus, mongodump
 
 TYPES = [
   {
@@ -7,7 +7,13 @@ TYPES = [
     'name': 'A-plus-LMS, https://apluslms.github.io/',
     'add': aplus.interactive_connect,
     'construct': aplus.construct_client,
-  }
+  },
+  {
+    'id': 'mongodump',
+    'name': 'Database export from https://docs.mongodb.com/database-tools/mongodump/',
+    'add': mongodump.interactive_connect,
+    'construct': mongodump.construct_client,
+  },
 ]
 
 def interactive_add(type):
