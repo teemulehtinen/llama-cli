@@ -16,8 +16,8 @@ The aim of Llama CLI is to support and ease the steps of
 
 Currently supported data sources are
 * A-plus https://apluslms.github.io/
-* *TODO* Acos
-* *TODO* Iwdap (course system prototype)
+* Database export from https://docs.mongodb.com/database-tools/mongodump/
+* *TODO* Acos/json
 
 ## Etymology
 
