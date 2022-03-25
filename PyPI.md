@@ -4,7 +4,13 @@ Short notes on publishing the package
 
 ### 0. Prerequisites
 
-Set up https://pypi.org API token in `~/.pypirc`
+Create https://pypi.org API token and place it to `~/.pypirc`
+
+    [pypi]
+    username = __token__
+    password = <PyPI token just generated>
+
+Install package tools
 
     python3 -m pip install build twine
 
