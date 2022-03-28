@@ -23,10 +23,11 @@ class LlamaApi:
   def _read_dir(self, dir):
     index = read_json((dir, EXPORT_INDEX_JSON))
     require(not index is None, f'Unable to read {dir}/{EXPORT_INDEX_JSON}')
+    l = len(self.sources)
     for i, s in enumerate(index.get('sources', [])):
       tables = read_json((dir, s['index_file']))
       require(not tables is None, f'Unable to read {dir}/{s["index_file"]}')
-      self.sources.append({ **s, 'id': i, 'dir': dir, 'tables': tables })
+      self.sources.append({ **s, 'id': l + i, 'dir': dir, 'tables': tables })
     p = index.get('persons')
     if p:
       self.persons.append(p)

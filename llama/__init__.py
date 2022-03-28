@@ -1,6 +1,6 @@
 import sys
 from .common import find, require
-from .Config import Config
+from .Config import Config, TIME_KEY, PERSON_KEY, GRADE_KEY
 from . import status
 from . import sources
 from . import list
