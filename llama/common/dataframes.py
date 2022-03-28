@@ -12,8 +12,8 @@ def df_accepted(df, key, include=None, exclude=None):
   return df[df[key].isin(include) & ~df[key].isin(exclude)]
 
 def df_complete_n_index(df, n, fill = 0):
-  zeros = [fill for _ in range(n)]
-  df_zero = pandas.DataFrame({k: zeros for k in df.columns}, index=[i for i in range(n)])
+  zeros = [fill for _ in range(int(n))]
+  df_zero = pandas.DataFrame({k: zeros for k in df.columns}, index=[i for i in range(int(n))])
   return df.add(df_zero, fill_value=0)
 
 def df_adjust_index(df, add, name=None):
@@ -22,6 +22,8 @@ def df_adjust_index(df, add, name=None):
   return df.set_index(n)
 
 def df_adjust_index_to_zero(df, name=None):
+  if df.empty:
+    return df
   return df_complete_n_index(
     df_adjust_index(df, -numpy.min(df.index), name),
     numpy.max(df.index)
@@ -64,14 +66,14 @@ def groupby_nth_deltas(groupby, key, n=1):
   return groupby[key].apply(nth_delta, n=n).dropna()
 
 def groupby_as_ones(groupby):
-  return groupby.apply(lambda _: 1) if len(groupby) > 0 else pandas.Series()
+  return groupby.apply(lambda _: 1) if len(groupby) > 0 else pandas.Series(dtype='float64')
 
 def as_minute_scalar(series):
   return series.astype('int64') // 1e9 / 60
 
 def split_outliers(series, max_z_score=2.5):
   if series.empty:
-    return series, pandas.Series()
+    return series, pandas.Series(dtype='float64')
   accept = numpy.abs(stats.zscore(series)) < max_z_score
   return series[accept], series[~accept]
 
@@ -88,18 +90,18 @@ def median_or_mean(series):
 def measures(series):
   if series is None:
     return None
-  if series.empty:
-    return {'n': 0, 'label': 'na', 'm': 0, 'mad': 0}
-  m, label = median_or_mean(series)
-  mad, _ = median_or_mean(numpy.absolute(series - m))
-  return {'n': series.shape[0], 'label': label, 'm': m, 'mad': mad}
+  if not series.empty:
+    m, label = median_or_mean(series)
+    mad, _ = median_or_mean(numpy.absolute(series - m))
+    return {'n': series.shape[0], 'label': label, 'm': m, 'mad': mad}
+  return {'n': 0, 'label': 'na', 'm': 0, 'mad': 0}
 
 def sums_measures(series):
   if series is None:
     return None
-  if series.empty:
-    return {'n': 0, 'label': 'na', 'm': 0, 'mad': 0}
   n = numpy.sum(series)
-  m = numpy.sum(i * series[i] for i in range(series.shape[0])) / n
-  mad = numpy.sum(abs(i - m) * series[i] for i in range(series.shape[0])) / n
-  return {'n': n, 'label': 'M', 'm': m, 'mad': mad}
+  if n > 0:
+    m = numpy.sum(i * series[i] for i in range(series.shape[0])) / n
+    mad = numpy.sum(abs(i - m) * series[i] for i in range(series.shape[0])) / n
+    return {'n': n, 'label': 'M', 'm': m, 'mad': mad}
+  return {'n': 0, 'label': 'na', 'm': 0, 'mad': 0}

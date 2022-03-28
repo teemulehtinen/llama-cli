@@ -1,6 +1,8 @@
 import numpy
 import pandas
 
+from llama.common.series import ser_concat
+
 from .common import (
   as_minute_scalar, df_adjust_index_to_zero, df_complete_n_index,
   df_sum, df_sum_by_index, df_index_sums, flatten_dict, groupby_as_ones,
@@ -24,22 +26,22 @@ class LlamaStats:
   @staticmethod
   def overall_series(table_iterator, rev_n=2):
     count = 0
-    p_grades = pandas.DataFrame()
-    p_actions = pandas.DataFrame()
-    p_exercises = pandas.DataFrame()
-    w_grades = pandas.DataFrame()
-    w_count = pandas.DataFrame()
-    wd_count = pandas.DataFrame()
-    h_count = pandas.DataFrame()
-    grade_ratios = pandas.Series()
-    first_grades = pandas.Series()
-    grade_changes = pandas.Series()
-    exercise_actions = pandas.Series()
+    p_grades = pandas.DataFrame(columns=[GRADE_KEY])
+    p_actions = pandas.DataFrame(columns=[COUNT_KEY])
+    p_exercises = pandas.DataFrame(columns=[COUNT_KEY])
+    w_grades = pandas.DataFrame(columns=[GRADE_KEY])
+    w_count = pandas.DataFrame(columns=[COUNT_KEY])
+    wd_count = pandas.DataFrame(columns=[COUNT_KEY])
+    h_count = pandas.DataFrame(columns=[COUNT_KEY])
+    grade_ratios = pandas.Series(dtype='float64')
+    first_grades = pandas.Series(dtype='float64')
+    grade_changes = pandas.Series(dtype='float64')
+    exercise_actions = pandas.Series(dtype='float64')
     exercise_persons = []
-    end_minutes = pandas.Series()
-    rev_minutes = [pandas.Series() for _ in range(rev_n)]
-    rev_grades = [pandas.Series() for _ in range(rev_n)]
-    rev_changes = [pandas.Series() for _ in range(rev_n)]
+    end_minutes = pandas.Series(dtype='float64')
+    rev_minutes = [pandas.Series(dtype='float64') for _ in range(rev_n)]
+    rev_grades = [pandas.Series(dtype='float64') for _ in range(rev_n)]
+    rev_changes = [pandas.Series(dtype='float64') for _ in range(rev_n)]
     for _, table, rows in table_iterator:
       append_discrete_time_columns(rows)
       rows[TIME_KEY] = as_minute_scalar(rows[TIME_KEY])
@@ -55,16 +57,16 @@ class LlamaStats:
       w_count = df_sum(w_count, rows.groupby(WEEKNUMBER_KEY).size(), COUNT_KEY)
       wd_count = df_sum(wd_count, rows.groupby(WEEKDAY_KEY).size(), COUNT_KEY)
       h_count = df_sum(h_count, rows.groupby(HOUR_KEY).size(), COUNT_KEY)
-      grade_ratios = grade_ratios.append(byperson[GRADERATIO_KEY].max(), True)
-      first_grades = first_grades.append(byperson[GRADERATIO_KEY].first(), True)
-      grade_changes = grade_changes.append(byperson[GRADERATIO_KEY].diff().dropna(), True)
-      exercise_actions = exercise_actions.append(byperson.size(), True)
+      grade_ratios = ser_concat(grade_ratios, byperson[GRADERATIO_KEY].max())
+      first_grades = ser_concat(first_grades, byperson[GRADERATIO_KEY].first())
+      grade_changes = ser_concat(grade_changes, byperson[GRADERATIO_KEY].diff().dropna())
+      exercise_actions = ser_concat(exercise_actions, byperson.size())
       exercise_persons.append(len(byperson))
-      end_minutes = end_minutes.append(times_until_end(byperson), True)
+      end_minutes = ser_concat(end_minutes, times_until_end(byperson))
       for i in range(rev_n):
-        rev_minutes[i] = rev_minutes[i].append(times_nth_delta(byperson, i + 1), True)
-        rev_grades[i] = rev_grades[i].append(byperson[GRADERATIO_KEY].nth(i + 1).dropna(), True)
-        rev_changes[i] = rev_changes[i].append(groupby_nth_deltas(byperson, GRADERATIO_KEY, i + 1), True)
+        rev_minutes[i] = ser_concat(rev_minutes[i], times_nth_delta(byperson, i + 1))
+        rev_grades[i] = ser_concat(rev_grades[i], byperson[GRADERATIO_KEY].nth(i + 1).dropna())
+        rev_changes[i] = ser_concat(rev_changes[i], groupby_nth_deltas(byperson, GRADERATIO_KEY, i + 1))
     week = df_adjust_index_to_zero(w_grades.join(w_count))
     return {
       '_values': {
@@ -81,7 +83,7 @@ class LlamaStats:
       'first_grades': first_grades,
       'grade_changes': grade_changes,
       'exercise_actions': exercise_actions,
-      'exercise_persons': pandas.Series(exercise_persons),
+      'exercise_persons': pandas.Series(exercise_persons, dtype=int),
       'end_minutes': end_minutes,
       **{f'revision_{i + 1}_minutes': rev_minutes[i] for i in range(rev_n)},
       **{f'revision_{i + 1}_grades': rev_grades[i] for i in range(rev_n)},
@@ -127,7 +129,7 @@ class LlamaStats:
         if not person in learners:
           learners[person] = g_rows.reset_index(drop=True)
         else:
-          learners[person] = learners[person].append(g_rows, True)
+          learners[person] = ser_concat(learners[person], g_rows)
       count += 1
     def person_dict(person, rows):
       byexercise = rows.groupby(EXERCISE_KEY)

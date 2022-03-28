@@ -27,8 +27,9 @@ def person_has_columns_value(rows, columns, value, reverse=False):
     yield row[PERSON_KEY], not has_value if reverse else has_value
 
 def append_discrete_time_columns(rows):
-  rows[WEEKDAY_KEY] = rows[TIME_KEY].dt.dayofweek
-  rows[WEEKNUMBER_KEY] = rows[TIME_KEY].dt.weekofyear
+  iso = rows[TIME_KEY].dt.isocalendar()
+  rows[WEEKDAY_KEY] = iso.day - 1
+  rows[WEEKNUMBER_KEY] = iso.week
   rows[HOUR_KEY] = rows[TIME_KEY].dt.hour
 
 def times_until_end(groupby):

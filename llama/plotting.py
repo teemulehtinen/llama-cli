@@ -17,10 +17,17 @@ def multipage_plot_or_show(pdf_name, iterator, plot_function):
       pyplot.show()
 
 def nice_bins(min, max, steps=10):
-  s = (max - min) / steps
+  s = (max - min) / steps if max > min else 1 / steps
   return numpy.arange(min, max + 2 * s, s)
 
+def inclusive_bins(series):
+  if series.empty:
+    return nice_bins(0, 1)
+  return nice_bins(numpy.min(series), numpy.max(series))
+
 def limited_minute_bins(series, quantile=0.6, min=10):
+  if series.empty:
+    return nice_bins(0, min)
   return nice_bins(0, max(numpy.quantile(series, quantile), min))
 
 def select_bin(v, bins):
@@ -33,7 +40,7 @@ def select_bin(v, bins):
   return None
 
 def nf(x, pos=None):
-  if numpy.isnan(x):
+  if numpy.isnan(x) or numpy.isinf(x):
     return x
   if abs(x) > 1000000:
     return f'{int(x // 1000000)}M'
@@ -56,7 +63,7 @@ def nice_title(desc, mes, cmp):
 
 def nice_hist(axis, title, series, bins=None, show=None, compare=None):
   axis.set_title(nice_title(title, measures(series), measures(compare)), {'fontsize': 10})
-  nb = bins if not bins is None else nice_bins(numpy.min(series), numpy.max(series))
+  nb = inclusive_bins(series) if bins is None else bins
   n, b, patch = axis.hist(series, nb)
   if not show is None:
     i = select_bin(show, b)
