@@ -64,7 +64,7 @@ class MongodumpApi(AbstractApi):
 
     # NOTE: no use to extend previously fetched rows from complete database dump
     if not old_rows is None:
-      print(f'* Cached {table["name"]}: to update, remove {self.table_csv_name(table["id"])}')
+      print(f'* Cached {table["name"]}: to update, remove {os.path.join(*self.table_csv_name(table["id"]))}')
       return None
 
     data = pandas.DataFrame(self.parse_dump())
@@ -84,7 +84,7 @@ class MongodumpApi(AbstractApi):
     if not select_persons is None:
       data = data[data[self.config['pseudo_user_key']].isin(select_persons)]
 
-    # Use default column keys:
+    # Use default column keys
     rm_cols = []
     for def_key, old_key in [
       (TIME_KEY, self.config['time_key']),
@@ -110,7 +110,7 @@ class MongodumpApi(AbstractApi):
     return row.get(col_name.replace('_key', '_content'))
 
   def fetch_meta_json(self, table, row, include_personal):
-    return {}
+    return None
 
   def drop_for_export(self, table, rows, volatile_columns):
     rm_cols = [self.config['pseudo_item_key']] + self.config['personal_keys']

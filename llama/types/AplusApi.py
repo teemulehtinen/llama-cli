@@ -1,3 +1,4 @@
+import os
 import re
 from ..Config import PERSON_KEY, GRADE_KEY
 from .AbstractDjangoApi import AbstractDjangoApi
@@ -64,7 +65,7 @@ class AplusApi(AbstractDjangoApi):
 
     # NOTE: A-plus does not offer filtering by time or id to extend previously fetched rows
     if not old_rows is None:
-      print(f'* Cached {table["name"]}: to update, remove {self.table_csv_name(table["id"])}')
+      print(f'* Cached {table["name"]}: to update, remove {os.path.join(*self.table_csv_name(table["id"]))}')
       return None
 
     url = self.SUBMISSION_ROWS.format(url=self.url, course_id=self.course_id, exercise_id=table['id'])

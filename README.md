@@ -16,8 +16,8 @@ The aim of Llama CLI is to support and ease the steps of
 
 Currently supported data sources are
 * A-plus https://apluslms.github.io/
+* JSON log files from https://github.com/acos-server/acos-server
 * Database export from https://docs.mongodb.com/database-tools/mongodump/
-* *TODO* Acos/json
 
 ## Etymology
 

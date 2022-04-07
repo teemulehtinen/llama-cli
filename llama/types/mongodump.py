@@ -1,5 +1,5 @@
 from .MongodumpApi import MongodumpApi
-from ..common import require, input_selection
+from ..common import require
 
 DEFAULT_TABLE_FILTERS = (
   ('==', 'user_instructor', True),

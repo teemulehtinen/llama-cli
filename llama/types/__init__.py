@@ -1,5 +1,5 @@
 from ..common import require
-from . import aplus, mongodump
+from . import aplus, acosjson, mongodump
 
 TYPES = [
   {
@@ -7,6 +7,12 @@ TYPES = [
     'name': 'A-plus-LMS, https://apluslms.github.io/',
     'add': aplus.interactive_connect,
     'construct': aplus.construct_client,
+  },
+  {
+    'id': 'acosjson',
+    'name': 'JSON log files from https://github.com/acos-server/acos-server',
+    'add': acosjson.interactive_connect,
+    'construct': acosjson.construct_client,
   },
   {
     'id': 'mongodump',
