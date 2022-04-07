@@ -17,6 +17,7 @@ Install package tools
 ### 1. Make changes and update version
 
     grep version setup.cfg
+    grep VERSION llama/Config.py
 
 ### 2. Build distribution package and publish
 
