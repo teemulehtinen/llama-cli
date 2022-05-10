@@ -19,6 +19,9 @@ Currently supported data sources are
 * JSON log files from https://github.com/acos-server/acos-server
 * Database export from https://docs.mongodb.com/database-tools/mongodump/
 
+Transforming program submissions and events to [ProgSnap 2](https://cssplice.github.io/progsnap2)
+is supported via `llama shell`.
+
 ## Etymology
 
 The name for the project comes from ~ la lumière à Montagne analytique. Pardon my French for ~ light on the mountain of analytics. Also LA is an acronym, that the
@@ -121,6 +124,13 @@ many methods from `LlamaStats`.
 * `select: dict` (optional) see `llama.list`
 * **Returns** `iterator` over `tuples` of
   `(source: dict, table: dict, rows: pandas.DataFrame)`
+
+### `llama.progsnap2(select, export_dir)`
+
+Creates a [ProgSnap 2](https://cssplice.github.io/progsnap2) compatible
+export that merges the selected tables to one main event table.
+* `select: dict` see `llama.list`
+* `export_dir: str` a directory where the new export is created
 
 ### `llama.overall_description(select)`
 

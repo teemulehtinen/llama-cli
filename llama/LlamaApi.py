@@ -1,6 +1,7 @@
 from .Config import EXPORT_DIR, EXPORT_INDEX_JSON
 from .Filters import Filters
 from .LlamaStats import LlamaStats
+from .ProgSnap2 import ProgSnap2
 from .operations import filter_by_person, parse_timecolumn
 from .plotting import multipage_plot_or_show
 from .common import (
@@ -57,6 +58,11 @@ class LlamaApi:
         rows = read_csv((s['dir'], t['data_file']))
         parse_timecolumn(rows)
         yield s, t, filter_by_person(rows, persons_in, persons_out)
+
+  def progsnap2(self, select, export_dir):
+    exporter = ProgSnap2(self.get(select), export_dir)
+    exporter.process()
+    exporter.write()
 
   def _cached_series(self, target, select):
     key = (select, target)
