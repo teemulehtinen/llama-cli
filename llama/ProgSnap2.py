@@ -68,7 +68,11 @@ class ProgSnap2:
         tool_instance = 'Acos'
         log_column = 'log' if 'log' in rows.columns else None
         init_code = self.acos_initial_codes.get(table['name'])
-        init_code_id = self.empty_codestate() if init_code is None else self.append_codestate(init_code)
+        if not init_code:
+          init_code = ''
+          init_code_id = self.empty_codestate()
+        else:
+          init_code_id = self.append_codestate(init_code)
 
       for _, row in rows.iterrows():
         defs = {
@@ -98,6 +102,7 @@ class ProgSnap2:
                 'EventType': 'File.Create',
                 'CodeStateID': str(init_code_id),
                 'CodeStateSection': 'default',
+                'X-InsertText': init_code,
               })
             elif type == 'editor-change' and event.get('action') in ('insert', 'remove'):
               is_insert = event['action'] == 'insert'
