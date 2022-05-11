@@ -41,7 +41,7 @@ class Filters:
 
   def person_filter_columns(self, sources):
     for f in self.person_filters:
-      yield f, self._inclusion(f, sources)
+      yield f, self._inclusion([f], sources)
 
   def person_select(self, sources, include_personal):
     persons = {}
@@ -55,9 +55,7 @@ class Filters:
     return [p for p, m in persons.items() if m]
   
   def filter(self, sources):
-    out = sources
-    for f in self.inclusions:
-      out = self._inclusion(f, out)
+    out = self._inclusion(self.inclusions, sources)
     for f in self.exclusions:
       out = self._exclusion(f, out)
     return out
@@ -85,16 +83,18 @@ class Filters:
     return [p['person'] for p in status if p['included']] if status else None
 
   @classmethod
-  def _inclusion(cls, filter, sources):
+  def _inclusion(cls, filters, sources):
     sources_selected = []
     for s in sources:
-      if cls._match_source(filter, s):
+      source_filters = list(f for f in filters if cls._match_source(f, s))
+      if source_filters:
         tables_selected = []
         for t in s['tables']:
-          if cls._match_table(filter, t):
-            columns_selected = [c for c in t['columns'] if cls._match_column(filter, c)]
+          table_filters = list(f for f in source_filters if cls._match_table(f, t))
+          if table_filters:
+            columns_selected = [c for c in t['columns'] if any(cls._match_column(f, c) for f in table_filters)]
             columns_removed = [c for c in t['columns'] if not c in columns_selected]
-            if not 'column' in filter or len(columns_selected) > 0:
+            if any(not 'column' in f for f in table_filters) or len(columns_selected) > 0:
               tables_selected.append({ **t, 'columns': columns_selected, 'columns_rm': columns_removed })
         if len(tables_selected) > 0:
           sources_selected.append({ **s, 'tables': tables_selected })
