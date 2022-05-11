@@ -9,14 +9,16 @@ from .types.AplusApi import AplusApi
 
 class ProgSnap2:
 
-  def __init__(self, selection, export_dir):
+  def __init__(self, selection, export_dir, acos_initial_codes=None):
     self.selection = selection
     self.export_dir = export_dir
+    self.acos_initial_codes = acos_initial_codes or {}
     self.file_key_re = re.compile(AplusApi.FILE_KEY_REGEXP)
     self.main_table = pandas.DataFrame()
     self.code_table = pandas.DataFrame()
     self.code_id_count = 1
     self.unknown_code_id = None
+    self.empty_code_id = None
 
   def append_codestate(self, code):
     code_id = self.code_id_count
@@ -32,14 +34,22 @@ class ProgSnap2:
       self.unknown_code_id = self.append_codestate('Not saved')
     return self.unknown_code_id
   
+  def empty_codestate(self):
+    if self.empty_code_id is None:
+      self.empty_code_id = self.append_codestate('')
+    return self.empty_code_id
+
   def append_event(self, dict):
     self.main_table = pandas.concat(
       [self.main_table, pandas.DataFrame([dict])],
       ignore_index=True
     )
   
-  def ms_timestamp(self, ms):
-    return pandas.Timestamp(ms, unit='ms')
+  def format_time(self, ts):
+    return ts.isoformat(timespec='seconds')
+
+  def format_ms_time(self, ms):
+    return self.format_time(pandas.Timestamp(ms, unit='ms'))
 
   def process(self):
     for source, table, rows in self.selection:
@@ -57,12 +67,14 @@ class ProgSnap2:
       elif source['type'] == 'acosjson':
         tool_instance = 'Acos'
         log_column = 'log' if 'log' in rows.columns else None
+        init_code = self.acos_initial_codes.get(table['name'])
+        init_code_id = self.empty_codestate() if init_code is None else self.append_codestate(init_code)
 
       for _, row in rows.iterrows():
         defs = {
           'ToolInstances': tool_instance,
           'AssignmentID': table['id'],
-          'ServerTimestamp': row[TIME_KEY].isoformat(timespec='seconds'),
+          'ServerTimestamp': self.format_time(row[TIME_KEY]),
           'SubjectID': row[PERSON_KEY],
         }
 
@@ -75,15 +87,24 @@ class ProgSnap2:
         if log_column:
           code_id = code_id or self.unknown_codestate()
           qlcs = None
-          for event in json.loads(row[log_column]):
+          events_list = json.loads(row[log_column])
+          includes_editor = any(e.get('type') == 'editor-change' for e in events_list)
+          for event in events_list if includes_editor else []:
             type = event.get('type')
-            if type == 'editor-change' and event.get('action') in ('insert', 'remove'):
+            if type == 'reset':
+              self.append_event({
+                **defs,
+                'ClientTimestamp': self.format_ms_time(event['time']),
+                'EventType': 'File.Create',
+                'CodeStateID': str(init_code_id),
+              })
+            elif type == 'editor-change' and event.get('action') in ('insert', 'remove'):
               is_insert = event['action'] == 'insert'
               self.append_event({
                 **defs,
-                'ClientTimestamp': self.ms_timestamp(event['time']).isoformat(timespec='seconds'),
+                'ClientTimestamp': self.format_ms_time(event['time']),
                 'EventType': 'File.Edit',
-                'CodeStateID': code_id,
+                'CodeStateID': str(code_id),
                 'EditType': 'Insert' if is_insert else 'Remove',
                 'SourceLocation': f'Text:{event["start"]["row"]}:{event["start"]["column"]}',
                 'X-InsertText': '\n'.join(event['lines']) if is_insert else None,
@@ -94,9 +115,9 @@ class ProgSnap2:
             elif type == 'qlc-select':
               self.append_event({
                 **defs,
-                'ClientTimestamp': self.ms_timestamp(event['time']).isoformat(timespec='seconds'),
+                'ClientTimestamp': self.format_ms_time(event['time']),
                 'EventType': 'X-QLC.Answer',
-                'CodeStateID': code_id,
+                'CodeStateID': str(code_id),
                 'X-QLC.Type': qlcs[event['qlc']]['qlctype'],
                 'X-QLC.AnswerType': event['option']['qlctype'],
                 'X-QLC.AnswerText': event['option']['answer'],
@@ -107,7 +128,7 @@ class ProgSnap2:
             self.append_event({
               **defs,
               'EventType': 'Submit',
-              'CodeStateID': code_id or self.unknown_codestate(),
+              'CodeStateID': str(code_id or self.unknown_codestate()),
               'Score': row[GRADE_KEY],
             })
 

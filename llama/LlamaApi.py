@@ -59,8 +59,8 @@ class LlamaApi:
         parse_timecolumn(rows)
         yield s, t, rows
 
-  def progsnap2(self, select, export_dir):
-    exporter = ProgSnap2(self.get(select), export_dir)
+  def progsnap2(self, select, export_dir, acos_initial_codes=None):
+    exporter = ProgSnap2(self.get(select), export_dir, acos_initial_codes)
     exporter.process()
     exporter.write()
 
