@@ -95,7 +95,12 @@ class Filters:
             columns_selected = [c for c in t['columns'] if any(cls._match_column(f, c) for f in table_filters)]
             columns_removed = [c for c in t['columns'] if not c in columns_selected]
             if any(not 'column' in f for f in table_filters) or len(columns_selected) > 0:
-              tables_selected.append({ **t, 'columns': columns_selected, 'columns_rm': columns_removed })
+              tables_selected.append({
+                **t,
+                'columns': columns_selected,
+                'columns_rm': columns_removed,
+                'inc_filters': t.get('inc_filters', []) + table_filters,
+              })
         if len(tables_selected) > 0:
           sources_selected.append({ **s, 'tables': tables_selected })
     return sources_selected
@@ -114,8 +119,16 @@ class Filters:
           else:
             columns_selected = [c for c in t['columns'] if not cls._match_column(filter, c)]
             columns_removed = [c for c in t['columns'] if not c in columns_selected]
+            if len(columns_selected) == 0 and 'persons' in filter:
+              columns_selected = t['columns']
+              columns_removed = []
             if len(columns_selected) > 0:
-              tables_selected.append({ **t, 'columns': columns_selected, 'columns_rm': columns_removed })
+              tables_selected.append({
+                **t,
+                'columns': columns_selected,
+                'columns_rm': columns_removed,
+                'exc_filters': t.get('exc_filters', []) + [filter]
+              })
         if len(tables_selected) > 0:
           sources_selected.append({ **s, 'tables': tables_selected })
     return sources_selected

@@ -44,20 +44,20 @@ class LlamaApi:
         print(f'#{t["id"]} "{t["name"]}": {" ".join(cols)}')
 
   def _persons(self, select):
-    inc = set([])
-    exc = set([])
+    persons = set([])
     for s in [] if select is None else as_list(select):
       if 'persons' in s:
-        (exc if s.get('reverse', False) else inc).update(s['persons'])
-    return (inc if len(inc) > 0 else None), (exc if len(exc) > 0 else None)
+        persons.update(s['persons'])
+    return persons if len(persons) > 0 else None
 
   def get(self, select=None):
-    persons_in, persons_out = self._persons(select)
     for s in self._select(select):
       for t in s['tables']:
-        rows = read_csv((s['dir'], t['data_file']))
+        p_in = self._persons(t.get('inc_filters'))
+        p_out = self._persons(t.get('exc_filters'))
+        rows = filter_by_person(read_csv((s['dir'], t['data_file'])), p_in, p_out)
         parse_timecolumn(rows)
-        yield s, t, filter_by_person(rows, persons_in, persons_out)
+        yield s, t, rows
 
   def progsnap2(self, select, export_dir):
     exporter = ProgSnap2(self.get(select), export_dir)
