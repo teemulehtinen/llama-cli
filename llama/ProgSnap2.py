@@ -108,7 +108,7 @@ class ProgSnap2:
               **defs,
               'EventType': 'Submit',
               'CodeStateID': code_id or self.unknown_codestate(),
-              'Score': rows[GRADE_KEY],
+              'Score': row[GRADE_KEY],
             })
 
   def write(self):
