@@ -97,6 +97,7 @@ class ProgSnap2:
                 'ClientTimestamp': self.format_ms_time(event['time']),
                 'EventType': 'File.Create',
                 'CodeStateID': str(init_code_id),
+                'CodeStateSection': 'default',
               })
             elif type == 'editor-change' and event.get('action') in ('insert', 'remove'):
               is_insert = event['action'] == 'insert'
@@ -105,7 +106,8 @@ class ProgSnap2:
                 'ClientTimestamp': self.format_ms_time(event['time']),
                 'EventType': 'File.Edit',
                 'CodeStateID': str(code_id),
-                'EditType': 'Insert' if is_insert else 'Remove',
+                'CodeStateSection': 'default',
+                'EditType': 'Insert' if is_insert else 'Delete',
                 'SourceLocation': f'Text:{event["start"]["row"]}:{event["start"]["column"]}',
                 'X-InsertText': '\n'.join(event['lines']) if is_insert else None,
                 'X-DeleteText': '\n'.join(event['lines']) if not is_insert else None,
