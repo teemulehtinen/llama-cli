@@ -53,6 +53,7 @@ class AplusApi(AbstractDjangoApi):
           'name': self.en_name(e['display_name']),
           'max_points': e['max_points'],
           'max_submissions': e['max_submissions'],
+          'difficulty': e.get('difficulty'),
         }
         self.fetch_delay()
         details = self.fetch_json(e['url'])
