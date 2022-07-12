@@ -26,7 +26,7 @@ DEFAULT_DATABASE_CONFIG = {
 
 def interactive_connect():
   print('This will add JSON files exported with Mongodump as a source for learning data.')
-  main_file = input('Enter file path to the main data file: ')
+  main_file = input('Enter file paths to the data files: ')
   source_name = input('Enter a unique name to use for this source: ')
   require(main_file and source_name)
   source_id = ''.join(source_name.split())

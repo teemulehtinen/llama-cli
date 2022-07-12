@@ -49,8 +49,9 @@ class Filters:
       for s in sources:
         for t in s['tables']:
           rows, _ = s['api'].fetch_rows(t, include_personal)
-          for p, m in person_has_columns_value(rows, t['columns'], f['value'], not f['reverse']):
-            persons[p] = persons.get(p, True) and m
+          if not rows is None:
+            for p, m in person_has_columns_value(rows, t['columns'], f['value'], not f['reverse']):
+              persons[p] = persons.get(p, True) and m
     write_json(self.PERSON_SELECT_JSON, [{ 'person': p, 'included': m } for p, m in persons.items()])
     return [p for p, m in persons.items() if m]
   
@@ -96,7 +97,7 @@ class Filters:
         else:
           columns_selected = t['columns']
           columns_removed = []
-        if any(not 'column' in f for f in table_filters) or len(columns_selected) > 0:
+        if any(not 'column' in f for f in table_filters) or len(columns_selected) > 0 or not table_filters:
           tables_selected.append({
             **t,
             'columns': columns_selected,

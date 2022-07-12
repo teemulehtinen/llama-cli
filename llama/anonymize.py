@@ -1,10 +1,9 @@
 import random
 
-from llama.common.files import write_csv
 from .types import get_sources_with_tables
 from .Filters import Filters
 from .Config import PERSON_KEY, EXPORT_DIR, EXPORT_INDEX_JSON
-from .common import require, write_text, write_json
+from .common import require, write_text, write_json, write_csv
 
 def add_to_person_map(person_map, person_included, rows):
   for p in rows[PERSON_KEY]:

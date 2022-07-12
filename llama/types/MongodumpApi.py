@@ -14,9 +14,7 @@ class MongodumpApi(AbstractApi):
   def __init__(self, source_id, main_file, database_config):
     super().__init__(source_id)
     self.config = database_config
-    self.dir = os.path.dirname(main_file)
-    _, self.ext = os.path.splitext(main_file)
-    self.main_file = main_file
+    self.main_files = main_file.split(',')
     self.loaded_dump = None
     self.drop_columns_re = re.compile(self.config['drop_keys_re'])
     self.show_columns_re = re.compile(self.config['show_keys_re'])
@@ -68,7 +66,7 @@ class MongodumpApi(AbstractApi):
       return None
 
     data = pandas.DataFrame(self.parse_dump())
-    
+
     # Filter rows to the target
     print('> Selecting for #{}'.format(table['id']))
     data = data[data[self.config['table_key']] == table['full_id']]
@@ -122,14 +120,18 @@ class MongodumpApi(AbstractApi):
   def parse_dump(self):
     if self.loaded_dump is None:
       cached_links = {}
-      self.loaded_dump = self.parse_dump_file(self.main_file, cached_links)
+      self.loaded_dump = []
+      for f in self.main_files:
+        self.loaded_dump.extend(self.parse_dump_file(f, cached_links))
     return self.loaded_dump
 
   def parse_dump_file(self, file_path, cached_links):
+    dir = os.path.dirname(file_path)
+    _, ext = os.path.splitext(file_path)
 
     def load_linked_file(key):
       for name in [p.format(key) for p in self.config['references_to_collections']]:
-        path = os.path.join(self.dir, name + self.ext)
+        path = os.path.join(dir, name + ext)
         if os.path.exists(path):
           return self.parse_dump_file(path, cached_links)
       return None
