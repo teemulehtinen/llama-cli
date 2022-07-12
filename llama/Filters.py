@@ -50,13 +50,14 @@ class Filters:
         for t in s['tables']:
           rows, _ = s['api'].fetch_rows(t, include_personal)
           if not rows is None:
+            print(t['id'], rows.columns)
             for p, m in person_has_columns_value(rows, t['columns'], f['value'], not f['reverse']):
               persons[p] = persons.get(p, True) and m
     write_json(self.PERSON_SELECT_JSON, [{ 'person': p, 'included': m } for p, m in persons.items()])
     return [p for p, m in persons.items() if m]
   
   def filter(self, sources):
-    out = self._inclusion(self.inclusions, sources)
+    out = self._inclusion(self.inclusions, sources) if self.inclusions else sources
     for f in self.exclusions:
       out = self._exclusion(f, out)
     return out
@@ -88,24 +89,22 @@ class Filters:
     sources_selected = []
     for s in sources:
       source_filters = list(f for f in filters if cls._match_source(f, s))
-      tables_selected = []
-      for t in s['tables']:
-        table_filters = list(f for f in source_filters if cls._match_table(f, t))
-        if table_filters:
-          columns_selected = [c for c in t['columns'] if any(cls._match_column(f, c) for f in table_filters)]
-          columns_removed = [c for c in t['columns'] if not c in columns_selected]
-        else:
-          columns_selected = t['columns']
-          columns_removed = []
-        if any(not 'column' in f for f in table_filters) or len(columns_selected) > 0 or not table_filters:
-          tables_selected.append({
-            **t,
-            'columns': columns_selected,
-            'columns_rm': columns_removed,
-            'inc_filters': t.get('inc_filters', []) + table_filters,
-          })
-      if len(tables_selected) > 0:
-        sources_selected.append({ **s, 'tables': tables_selected })
+      if source_filters:
+        tables_selected = []
+        for t in s['tables']:
+          table_filters = list(f for f in source_filters if cls._match_table(f, t))
+          if table_filters:
+            columns_selected = [c for c in t['columns'] if any(cls._match_column(f, c) for f in table_filters)]
+            columns_removed = [c for c in t['columns'] if not c in columns_selected]
+            if any(not 'column' in f for f in table_filters) or len(columns_selected) > 0:
+              tables_selected.append({
+                **t,
+                'columns': columns_selected,
+                'columns_rm': columns_removed,
+                'inc_filters': t.get('inc_filters', []) + table_filters,
+              })
+        if len(tables_selected) > 0:
+          sources_selected.append({ **s, 'tables': tables_selected })
     return sources_selected
 
   @classmethod
