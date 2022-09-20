@@ -50,7 +50,6 @@ class Filters:
         for t in s['tables']:
           rows, _ = s['api'].fetch_rows(t, include_personal)
           if not rows is None:
-            print(t['id'], rows.columns)
             for p, m in person_has_columns_value(rows, t['columns'], f['value'], not f['reverse']):
               persons[p] = persons.get(p, True) and m
     write_json(self.PERSON_SELECT_JSON, [{ 'person': p, 'included': m } for p, m in persons.items()])

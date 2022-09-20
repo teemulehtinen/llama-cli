@@ -50,7 +50,7 @@ class AcosJsonApi(AbstractApi):
         protocol = json.loads(protocol_s)
 
         # Filter rows by persons
-        person = protocol.get('uid')
+        person = str(protocol.get('uid'))
         if select_persons is None or person in select_persons:
 
           # Use default column keys

@@ -78,7 +78,7 @@ class AplusApi(AbstractDjangoApi):
 
     # Filter rows by persons
     if not select_persons is None:
-      data = data[data[self.PSEUDO_USER_KEY].isin(select_persons)]
+      data = data[data[self.PSEUDO_USER_KEY].astype(str).isin(select_persons)]
 
     # Cancel late penalties to keep all grades comparable
     def cancel_apply(row):
@@ -91,7 +91,7 @@ class AplusApi(AbstractDjangoApi):
     # Use default column keys:
     # TIME_KEY matches
     # GRADE_KEY matches
-    data[PERSON_KEY] = data[self.PSEUDO_USER_KEY]
+    data[PERSON_KEY] = data[self.PSEUDO_USER_KEY].astype(str)
 
     # Filter extra columns
     rm_cols = self.REMOVE_KEYS
