@@ -92,7 +92,6 @@ class MongodumpApi(AbstractApi):
       if def_key != old_key:
         data[def_key] = data[old_key]
         rm_cols.append(old_key)
-    data[PERSON_KEY] = data[PERSON_KEY].astype(str)
 
     # Filter extra columns
     rm_cols.extend(c for c in data.columns if self.drop_columns_re.match(c))

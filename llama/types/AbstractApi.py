@@ -5,7 +5,7 @@ import json
 import requests
 import pandas
 from ..Config import STORAGE_DIR, TIME_KEY, PERSON_KEY
-from ..operations import parse_timecolumn
+from ..operations import ensure_column_types
 from ..common import read_json, write_json, read_csv, write_csv, read_text, write_text
 
 class AbstractApi:
@@ -45,7 +45,7 @@ class AbstractApi:
           self.fetch_delay()
     else:
       self.fetch_delay()
-    parse_timecolumn(rows)
+    ensure_column_types(rows)
     return rows, cached
 
   def fetch_files(self, table, rows, include_personal=False, only_cache=False):

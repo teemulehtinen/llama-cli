@@ -2,7 +2,7 @@ from .Config import EXPORT_DIR, EXPORT_INDEX_JSON
 from .Filters import Filters
 from .LlamaStats import LlamaStats
 from .ProgSnap2 import ProgSnap2
-from .operations import filter_by_person, parse_timecolumn
+from .operations import filter_by_person, ensure_column_types
 from .plotting import multipage_plot_or_show
 from .common import (
   require, as_list, read_json, read_csv,
@@ -56,7 +56,7 @@ class LlamaApi:
         p_in = self._persons(t.get('inc_filters'))
         p_out = self._persons(t.get('exc_filters'))
         rows = filter_by_person(read_csv((s['dir'], t['data_file'])), p_in, p_out)
-        parse_timecolumn(rows)
+        ensure_column_types(rows)
         yield s, t, rows
 
   def progsnap2(self, select, export_dir, acos_initial_codes=None):

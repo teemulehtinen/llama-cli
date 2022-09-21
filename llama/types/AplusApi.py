@@ -91,7 +91,7 @@ class AplusApi(AbstractDjangoApi):
     # Use default column keys:
     # TIME_KEY matches
     # GRADE_KEY matches
-    data[PERSON_KEY] = data[self.PSEUDO_USER_KEY].astype(str)
+    data[PERSON_KEY] = data[self.PSEUDO_USER_KEY]
 
     # Filter extra columns
     rm_cols = self.REMOVE_KEYS

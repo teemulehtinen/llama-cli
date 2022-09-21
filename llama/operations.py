@@ -6,9 +6,12 @@ WEEKDAY_KEY = 'Weekday'
 WEEKNUMBER_KEY = 'Weeknumber'
 HOUR_KEY = 'Hour'
 
-def parse_timecolumn(rows):
-  if not rows is None and TIME_KEY in rows:
-    rows[TIME_KEY] = pandas.to_datetime(rows[TIME_KEY])
+def ensure_column_types(rows):
+  if not rows is None:
+    if TIME_KEY in rows:
+      rows[TIME_KEY] = pandas.to_datetime(rows[TIME_KEY])
+    if PERSON_KEY in rows:
+      rows[PERSON_KEY] = rows[PERSON_KEY].astype(str)
 
 def last_time(rows):
   return rows[TIME_KEY].max()
