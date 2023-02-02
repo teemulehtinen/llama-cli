@@ -1,23 +1,7 @@
-import re
 from .types import get_sources_with_tables
 from .list import print_sources
 from .Filters import Filters
-from .common import count, require, input_selection
-
-def parse_exclusion(pattern):
-  result = re.match(r'^(-)?(\d+:)?(#?[\w ]+)?(\.[\w ]+)?(=[\w ]+)?$', pattern)
-  if not result:
-    return None
-  re_groups = result.groups()
-  table_id = re_groups[2] and re_groups[2].startswith('#')
-  return {
-    'reverse': re_groups[0] == '-',
-    'source': int(re_groups[1][:-1]) if re_groups[1] else None,
-    'table_by_id': table_id,
-    'table': re_groups[2][1:] if table_id else re_groups[2],
-    'column': re_groups[3][1:] if re_groups[3] else None,
-    'value': re_groups[4][1:] if re_groups[4] else None,
-  }
+from .common import require, input_selection
 
 def format_exclusion(spec):
   reverse = '-' if spec['reverse'] else ''
@@ -63,7 +47,7 @@ def command(args, config):
     fl = Filters(config.exclude)
     print_sources(fl.filter(get_sources_with_tables(config)))
   else:
-    exc = parse_exclusion(' '.join(args[1:]))
+    exc = Filters.parse(' '.join(args[1:]))
     require(exc, 'Invalid exclude pattern')
     if exc['source']:
       require(0 <= exc['source'] < len(config.sources), 'Invalid source index')

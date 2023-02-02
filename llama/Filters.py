@@ -1,3 +1,4 @@
+import re
 from .operations import person_has_columns_value
 from .common import count, read_json, write_json
 
@@ -153,3 +154,24 @@ class Filters:
   def _match_column(filter, column):
     m = filter.get('column')
     return m is None or m in column['key']
+
+  @staticmethod
+  def parse(str, columns = True):
+    result = re.match(
+      r'^(-)?(\d+:)?(#?[\w ]+)?(\.[\w ]+)?(=[\w ]+)?$'
+      if columns else
+      r'^(-)?(\d+:)?(#?[\w \.]+)?$',
+      str
+    )
+    if not result:
+      return None
+    re_groups = result.groups()
+    table_id = re_groups[2] and re_groups[2].startswith('#')
+    return {
+      'reverse': re_groups[0] == '-',
+      'source': int(re_groups[1][:-1]) if re_groups[1] else None,
+      'table_by_id': table_id,
+      'table': re_groups[2][1:] if table_id else re_groups[2],
+      'column': re_groups[3][1:] if columns and re_groups[3] else None,
+      'value': re_groups[4][1:] if columns and re_groups[4] else None,
+    }
