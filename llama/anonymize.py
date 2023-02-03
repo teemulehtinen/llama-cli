@@ -34,14 +34,21 @@ def command(args, config):
       else:
         add_to_person_map(person_map, person_included, rows)
 
+        table_dir = s['api'].table_dir_name(t['id'])
         for r in s['api'].fetch_files(t, rows, only_cache=True):
           if not r['content'] is None:
-            write_text((EXPORT_DIR,) + r['path'][1:], r['content'])
-
+            p = person_map.get(r['row'][PERSON_KEY])
+            if not p is None:
+              item_dir = s['api'].item_dir_name({ **r['row'], PERSON_KEY: p })
+              write_text((EXPORT_DIR, table_dir, item_dir, r['col']), r['content'])
         metas = False
+        meta_file = s['api'].META_JSON
         for r in s['api'].fetch_meta(t, rows, only_cache=True):
           if not r['content'] is None:
-            write_json((EXPORT_DIR,) + r['path'][1:], r['content'])
+            p = person_map.get(r['row'][PERSON_KEY])
+            if not p is None:
+              item_dir = s['api'].item_dir_name({ **r['row'], PERSON_KEY: p })
+              write_json((EXPORT_DIR, table_dir, item_dir, meta_file), r['content'])
             metas = True
 
         table_csv = s['api'].table_csv_name(t['id'])[1:]
