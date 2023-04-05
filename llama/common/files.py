@@ -16,17 +16,23 @@ def ensure_dir(path):
       mkdir(p)
       p = os.path.join(p, path[i + 1])
 
-def read_text(path):
+def read_any(path, txt=False):
   file_name = path_to_file_name(path)
   if not os.path.isfile(file_name):
     return None
-  with open(file_name) as f:
+  with open(file_name, 'r' if txt else 'rb') as f:
     return f.read()
 
-def write_text(path, text):
+def write_any(path, data, txt=False):
   ensure_dir(path)
-  with open(path_to_file_name(path), 'w') as f:
-    f.write(text)
+  with open(path_to_file_name(path), 'w' if txt else 'wb') as f:
+    f.write(data)
+
+def read_text(path):
+  return read_any(path, txt=True)
+
+def write_text(path, text):
+  write_any(path, text, txt=True)
 
 def read_json(path):
   text = read_text(path)

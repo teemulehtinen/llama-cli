@@ -2,7 +2,7 @@ import os.path
 import uuid
 from .common import read_json, write_json
 
-VERSION = '1.0.16'
+VERSION = '1.0.17'
 CONFIG_FILE = '.llama'
 TOKENS_FILE = '.tokens'
 STORAGE_DIR = 'fetched'

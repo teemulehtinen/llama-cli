@@ -6,7 +6,7 @@ import requests
 import pandas
 from ..Config import STORAGE_DIR, TIME_KEY, PERSON_KEY
 from ..operations import ensure_column_types
-from ..common import read_json, write_json, read_csv, write_csv, read_text, write_text
+from ..common import read_json, write_json, read_csv, write_csv, read_any, write_any
 
 class AbstractApi:
 
@@ -56,9 +56,9 @@ class AbstractApi:
       for c in file_cols:
         path = (STORAGE_DIR, table_dir, item_dir, c)
         content, cached = self.cached_or_fetch(
-          lambda: read_text(path),
+          lambda: read_any(path),
           lambda: self.fetch_file(table, row, c, include_personal),
-          lambda r: write_text(path, r),
+          lambda r: write_any(path, r),
           True,
           only_cache
         )

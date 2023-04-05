@@ -21,6 +21,7 @@ class AplusApi(AbstractDjangoApi):
   META_KEYS = ['exercise', 'submission_time', 'grading_time', 'grade', 'late_penalty_applied', 'feedback', 'grading_data']
   FILE_KEY_REGEXP = r'^file\d+$'
   FILE_VAL_REGEXP = r'^https:\/\/[^?]+'
+  PERSONAL_FILE_REGEXP = r'\"[^\"]+\.(txt|py|java|scala|c|cpp|js|mat)\"'
   PERSONAL_REGEXP = r'^# (Nimi|Opiskelijanumero): .*$'
 
   @classmethod
@@ -34,6 +35,7 @@ class AplusApi(AbstractDjangoApi):
     self.course_id = course_id
     self.file_key_re = re.compile(self.FILE_KEY_REGEXP)
     self.file_val_re = re.compile(self.FILE_VAL_REGEXP)
+    self.personal_file_re = re.compile(self.PERSONAL_FILE_REGEXP, flags=re.I)
     self.personal_re = re.compile(self.PERSONAL_REGEXP, flags=re.I | re.M)
 
   def list_courses(self):
@@ -107,10 +109,10 @@ class AplusApi(AbstractDjangoApi):
   def fetch_file(self, table, row, col_name, include_personal):
     url_match = self.file_val_re.match(row[col_name])
     if url_match:
-      content = self.fetch(url_match.group(0)).text
-      if not include_personal:
-        content = self.personal_re.sub('', content)
-      return content
+      r = self.fetch(url_match.group(0))
+      if not include_personal and self.personal_file_re.match(r.headers.get('content-disposition')):
+        return self.personal_re.sub('', r.text).encode()
+      return r.content
     return None
 
   def fetch_meta_json(self, table, row, include_personal):
