@@ -48,7 +48,7 @@ class AbstractApi:
     ensure_column_types(rows)
     return rows, cached
 
-  def fetch_files(self, table, rows, include_personal=False, only_cache=False):
+  def fetch_files(self, table, rows, include_personal=False, only_cache=False, fix_privacy=False):
     file_cols = self.file_columns(table, rows)
     table_dir = self.table_dir_name(table['id'])
     for _, row in rows.iterrows():
@@ -62,6 +62,8 @@ class AbstractApi:
           True,
           only_cache
         )
+        if fix_privacy and cached:
+          write_any(path, self.fix_file_privacy(table, row, c, content))
         if not content is None and not cached:
           self.fetch_delay()
         yield { 'row': row, 'col': c, 'path': path, 'content': content, 'cached': cached }
@@ -115,6 +117,9 @@ class AbstractApi:
     raise NotImplementedError()
 
   def fetch_file(self, table, row, col_name, include_personal):
+    raise NotImplementedError()
+
+  def fix_file_privacy(self, table, row, col_name, content):
     raise NotImplementedError()
 
   def drop_for_export(self, table, rows):

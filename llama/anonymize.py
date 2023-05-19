@@ -3,7 +3,7 @@ import random
 from .types import get_sources_with_tables
 from .Filters import Filters
 from .Config import PERSON_KEY, EXPORT_DIR, EXPORT_INDEX_JSON
-from .common import require, write_text, write_json, write_csv
+from .common import write_any, write_json, write_csv
 
 def add_to_person_map(person_map, person_included, rows):
   for p in rows[PERSON_KEY]:
@@ -40,7 +40,7 @@ def command(args, config):
             p = person_map.get(r['row'][PERSON_KEY])
             if not p is None:
               item_dir = s['api'].item_dir_name({ **r['row'], PERSON_KEY: p })
-              write_text((EXPORT_DIR, table_dir, item_dir, r['col']), r['content'])
+              write_any((EXPORT_DIR, table_dir, item_dir, r['col']), r['content'])
         metas = False
         meta_file = s['api'].META_JSON
         for r in s['api'].fetch_meta(t, rows, only_cache=True):

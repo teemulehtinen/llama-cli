@@ -21,8 +21,8 @@ class AplusApi(AbstractDjangoApi):
   META_KEYS = ['exercise', 'submission_time', 'grading_time', 'grade', 'late_penalty_applied', 'feedback', 'grading_data']
   FILE_KEY_REGEXP = r'^file\d+$'
   FILE_VAL_REGEXP = r'^https:\/\/[^?]+'
-  PERSONAL_FILE_REGEXP = r'\"[^\"]+\.(txt|py|java|scala|c|cpp|js|mat)\"'
-  PERSONAL_REGEXP = r'^# (Nimi|Opiskelijanumero): .*$'
+  PERSONAL_FILE_REGEXP = r'^.*filename=\"[^\"]+\.(txt|py|java|scala|c|cpp|js|mat)\".*$'
+  PERSONAL_REGEXP = r'# (Nimi|Opiskelijanumero): [\w -]*'
 
   @classmethod
   def create(cls, host, token):
@@ -110,10 +110,17 @@ class AplusApi(AbstractDjangoApi):
     url_match = self.file_val_re.match(row[col_name])
     if url_match:
       r = self.fetch(url_match.group(0))
-      if not include_personal and self.personal_file_re.match(r.headers.get('content-disposition')):
+      cd = r.headers.get('content-disposition')
+      if not include_personal and self.personal_file_re.match(cd):
         return self.personal_re.sub('', r.text).encode()
       return r.content
     return None
+
+  def fix_file_privacy(self, table, row, col_name, content):
+    try:
+      return self.personal_re.sub('', content.decode()).encode()
+    except UnicodeDecodeError:
+      return self.fetch_file(table, row, col_name, False)
 
   def fetch_meta_json(self, table, row, include_personal):
     url = self.SUBMISSION_DETAILS.format(url=self.url, submission_id=row[self.PSEUDO_ITEM_KEY])

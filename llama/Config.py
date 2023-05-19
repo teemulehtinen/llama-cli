@@ -2,7 +2,7 @@ import os.path
 import uuid
 from .common import read_json, write_json
 
-VERSION = '1.0.17'
+VERSION = '1.0.18'
 CONFIG_FILE = '.llama'
 TOKENS_FILE = '.tokens'
 STORAGE_DIR = 'fetched'
@@ -35,6 +35,9 @@ class Config:
       if not 'type' in src and 'id' in src:
         src['type'] = src['id']
         del src['id']
+    
+    # Upgrade to latest version
+    self.data['llama'] = VERSION
 
   def write(self):
     data, tokens = self.split_tokens(self.data)

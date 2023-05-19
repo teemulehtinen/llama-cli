@@ -14,7 +14,7 @@ def get_filtered_table_rows(select_filter, config):
 
 def command(args, config):
   target = args[0] if len(args) > 0 else None
-  if not target in ('rows', 'files', 'meta'):
+  if not target in ('rows', 'files', 'filesfix', 'meta'):
     print('Fetches learning data from sources\n')
     print('usage: llama fetch <target> [<select>]\n')
     print('   target    rows     new table rows')
@@ -35,9 +35,14 @@ def command(args, config):
       for t in s['tables']:
         columns_rm = [c['key'] for c in t['columns_rm']] if 'columns_rm' in t else None
         s['api'].fetch_rows(t, config.privacy == 'none', False, persons, columns_rm)
-  elif target == 'files':
+  elif target in ('files', 'filesfix'):
     for source, table, rows in get_filtered_table_rows(fls, config):
-      for r in source['api'].fetch_files(table, rows, config.privacy == 'none'):
+      for r in source['api'].fetch_files(
+        table,
+        rows,
+        include_personal=config.privacy == 'none',
+        fix_privacy=target == 'filesfix'
+      ):
         if r['cached']:
           print(f'* Cached file {"/".join(r["path"])}')
   elif target == 'meta':
